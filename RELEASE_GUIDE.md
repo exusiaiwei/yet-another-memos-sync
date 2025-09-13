@@ -75,7 +75,7 @@
 
 4. **Upload Files** (Binary attachments)
    - ✅ `manifest.json`
-   - ✅ `main.js` 
+   - ✅ `main.js`
    - ✅ `styles.css`
 
 5. **Release Settings**
