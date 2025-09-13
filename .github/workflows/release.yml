@@ -5,30 +5,66 @@ on:
     tags:
       - "*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Build plugin
-        run: |
-          npm install
-          npm run build
+        run: npm run build
 
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
+          
+          cat > release_notes.md << 'EOF'
+          ## 🎉 What's New in $tag
+
+          ### ✨ Features
+          - 🎨 Enhanced List Callout format with simplified 4-period emoji system
+          - 🔄 Improved synchronization with time limits and incremental updates  
+          - 🌍 Full internationalization support (English/Chinese)
+          - ⚙️ Flexible configuration options
+
+          ### 🐛 Bug Fixes
+          - Fixed multi-line memo formatting issues
+          - Improved deletion detection reliability
+          - Enhanced error handling and logging
+
+          ### 📚 Documentation
+          - Updated README with comprehensive setup guide
+          - Added Chinese translation (README.zh-CN.md)
+          - Improved visual format examples
+
+          ---
+
+          **Installation:**
+          1. Download the plugin files below
+          2. Extract to your vault's plugins folder: `<vault>/.obsidian/plugins/yet-another-memos-sync/`
+          3. Enable the plugin in Obsidian settings
+
+          **Requirements:**
+          - Obsidian v1.0.0 or higher
+          - Memos server (supports v0.25.1 and legacy versions)
+          EOF
 
           gh release create "$tag" \
-            --title="$tag" \
-            --draft \
+            --title="🗂️ Yet Another Memos Sync $tag" \
+            --notes-file=release_notes.md \
             main.js manifest.json styles.css
