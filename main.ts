@@ -1,85 +1,80 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { Plugin, Setting, PluginSettingTab, Notice } from 'obsidian';
+import { DailyNoteManager } from './src/services/dailyNoteManager';
+import { MemosAPIClient } from './src/api/memosClient';
+import { SimpleMemosPaginator } from './src/api/memosPaginator';
+import { MemosSettings } from './src/types';
+import { t } from './src/i18n/translationManager';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface YetAnotherMemosSyncSettings extends MemosSettings {
+	// Plugin-specific settings can be added here
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
-}
+const DEFAULT_SETTINGS: MemosSettings = {
+  // API Configuration
+  apiUrl: 'https://demo.usememos.com',
+  apiToken: '',
+  apiVersion: 'v0.25.1',
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+  // Sync Settings
+  dailyMemoHeader: '## 📓 Memos',
+  attachmentFolderPath: 'attachments',
+  createMissingDailyNotes: true,
+  useCalloutFormat: false,
+  useListCalloutFormat: false,
+  syncDaysLimit: 30, // 默认只同步最近30天
+
+  // Auto Sync Settings
+  enableAutoSyncOnStartup: false,
+  startupSyncDelay: 5,
+  skipIfSyncedToday: true,
+  periodicSyncInterval: 0,
+};
+
+export default class YetAnotherMemosSyncPlugin extends Plugin {
+	settings: YetAnotherMemosSyncSettings;
+	private dailyNoteManager: DailyNoteManager;
+	private periodicSyncInterval: number;
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		// Initialize services
+		this.dailyNoteManager = new DailyNoteManager(this.app, this.settings);
+
+		// Add ribbon icon
+		this.addRibbonIcon('sync', t.t('SYNC_MEMOS'), () => {
+			this.syncMemos();
 		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
+		// Add commands
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
+			id: 'sync-memos',
+			name: t.t('SYNC_MEMOS'),
+			callback: () => this.syncMemos()
 		});
-		// This adds an editor command that can perform some operation on the current editor instance
+
 		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-			}
+			id: 'force-sync-memos',
+			name: t.t('FORCE_SYNC_MEMOS'),
+			callback: () => this.forceSyncMemos()
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		// Add settings tab
+		this.addSettingTab(new YetAnotherMemosSyncSettingTab(this.app, this));
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
+		// Schedule startup sync
+		if (this.settings.enableAutoSyncOnStartup) {
+			this.scheduleStartupSync();
+		}
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		// Schedule periodic sync
+		this.schedulePeriodicSync();
 	}
 
 	onunload() {
-
+		if (this.periodicSyncInterval) {
+			window.clearInterval(this.periodicSyncInterval);
+		}
 	}
 
 	async loadSettings() {
@@ -88,46 +83,244 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.schedulePeriodicSync(); // Reschedule periodic sync when settings change
+	}
+
+	private async syncMemos() {
+		try {
+			new Notice(t.t('SYNC_STARTING'));
+			await this.dailyNoteManager.sync();
+			new Notice(t.t('SYNC_SUCCESS'));
+		} catch (error) {
+			console.error('Sync failed:', error);
+			new Notice(`${t.t('SYNC_FAILED')}: ${error.message}`);
+		}
+	}
+
+	private async forceSyncMemos() {
+		try {
+			new Notice(t.t('FORCE_SYNC_STARTING'));
+			await this.dailyNoteManager.forceSync();
+			new Notice(t.t('FORCE_SYNC_SUCCESS'));
+		} catch (error) {
+			console.error('Force sync failed:', error);
+			new Notice(`${t.t('FORCE_SYNC_FAILED')}: ${error.message}`);
+		}
+	}
+
+	private scheduleStartupSync() {
+		if (this.settings.skipIfSyncedToday) {
+			const lastSyncDate = localStorage.getItem('yams-last-sync-date');
+			const today = new Date().toDateString();
+			if (lastSyncDate === today) {
+				return; // Skip if already synced today
+			}
+		}
+
+		setTimeout(() => {
+			this.syncMemos();
+		}, this.settings.startupSyncDelay * 1000);
+	}
+
+	private schedulePeriodicSync() {
+		if (this.periodicSyncInterval) {
+			window.clearInterval(this.periodicSyncInterval);
+		}
+
+		if (this.settings.periodicSyncInterval > 0) {
+			this.periodicSyncInterval = window.setInterval(() => {
+				this.syncMemos();
+			}, this.settings.periodicSyncInterval * 60 * 1000);
+		}
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
+class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
+	plugin: YetAnotherMemosSyncPlugin;
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: any, plugin: YetAnotherMemosSyncPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	display(): void {
-		const {containerEl} = this;
-
+		const { containerEl } = this;
 		containerEl.empty();
 
+		containerEl.createEl('h2', { text: t.t('SETTINGS_TITLE') });
+
+		// API配置
+		containerEl.createEl('h3', { text: t.t('API_CONFIG_TITLE') });
+
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName(t.t('API_URL_NAME'))
+			.setDesc(t.t('API_URL_DESC'))
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('https://usememos.com')
+				.setValue(this.plugin.settings.apiUrl)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.apiUrl = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('API_TOKEN_NAME'))
+			.setDesc(t.t('API_TOKEN_DESC'))
+			.addText(text => text
+				.setPlaceholder('Enter your API token')
+				.setValue(this.plugin.settings.apiToken)
+				.onChange(async (value) => {
+					this.plugin.settings.apiToken = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('API_VERSION_NAME'))
+			.setDesc(t.t('API_VERSION_DESC'))
+			.addDropdown(dropdown => dropdown
+				.addOption('v0.25.1', 'v0.25.1 (Latest)')
+				.addOption('v0.24.0', 'v0.24.0')
+				.addOption('v0.23.0', 'v0.23.0')
+				.addOption('v0.22.0', 'v0.22.0')
+				.addOption('v0.21.0', 'v0.21.0')
+				.addOption('legacy', 'Legacy (v0.20 and below)')
+				.setValue(this.plugin.settings.apiVersion)
+				.onChange(async (value) => {
+					this.plugin.settings.apiVersion = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// 同步设置
+		containerEl.createEl('h3', { text: t.t('SYNC_CONFIG_TITLE') });
+
+		new Setting(containerEl)
+			.setName(t.t('DAILY_HEADER_NAME'))
+			.setDesc(t.t('DAILY_HEADER_DESC'))
+			.addText(text => text
+				.setPlaceholder('Memos')
+				.setValue(this.plugin.settings.dailyMemoHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.dailyMemoHeader = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('ATTACHMENT_FOLDER_NAME'))
+			.setDesc(t.t('ATTACHMENT_FOLDER_DESC'))
+			.addText(text => text
+				.setPlaceholder('Attachments')
+				.setValue(this.plugin.settings.attachmentFolderPath)
+				.onChange(async (value) => {
+					this.plugin.settings.attachmentFolderPath = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('CREATE_MISSING_NOTES_NAME'))
+			.setDesc(t.t('CREATE_MISSING_NOTES_DESC'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.createMissingDailyNotes)
+				.onChange(async (value) => {
+					this.plugin.settings.createMissingDailyNotes = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('USE_CALLOUT_FORMAT_NAME'))
+			.setDesc(t.t('USE_CALLOUT_FORMAT_DESC'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useCalloutFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.useCalloutFormat = value;
+					if (value) {
+						// Disable list callout format when callout is enabled
+						this.plugin.settings.useListCalloutFormat = false;
+					}
+					await this.plugin.saveSettings();
+					this.display(); // Refresh display
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('USE_LIST_CALLOUT_FORMAT_NAME'))
+			.setDesc(t.t('USE_LIST_CALLOUT_FORMAT_DESC'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useListCalloutFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.useListCalloutFormat = value;
+					if (value) {
+						// Disable callout format when list callout is enabled
+						this.plugin.settings.useCalloutFormat = false;
+					}
+					await this.plugin.saveSettings();
+					this.display(); // Refresh display
+				}));
+
+		// Add a helpful note about List Callouts plugin
+		if (this.plugin.settings.useListCalloutFormat) {
+			const listCalloutNote = containerEl.createEl('div', {
+				cls: 'setting-item-description',
+				text: '💡 为获得最佳视觉效果，建议安装 "List Callouts" 插件 (mgmeyers.obsidian-list-callouts)，它可以根据 emoji 自动为列表添加颜色样式。'
+			});
+			listCalloutNote.style.marginTop = '8px';
+			listCalloutNote.style.padding = '8px';
+			listCalloutNote.style.backgroundColor = 'var(--background-secondary)';
+			listCalloutNote.style.borderRadius = '4px';
+			listCalloutNote.style.fontSize = '0.9em';
+		}
+
+		new Setting(containerEl)
+			.setName(t.t('SYNC_DAYS_LIMIT_NAME'))
+			.setDesc(t.t('SYNC_DAYS_LIMIT_DESC'))
+			.addText(text => text
+				.setPlaceholder('30')
+				.setValue(String(this.plugin.settings.syncDaysLimit))
+				.onChange(async (value) => {
+					this.plugin.settings.syncDaysLimit = Number(value) || 30;
+					await this.plugin.saveSettings();
+				}));
+
+		// 自动同步设置
+		containerEl.createEl('h3', { text: t.t('AUTO_SYNC_TITLE') });
+
+		new Setting(containerEl)
+			.setName(t.t('AUTO_SYNC_STARTUP_NAME'))
+			.setDesc(t.t('AUTO_SYNC_STARTUP_DESC'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableAutoSyncOnStartup)
+				.onChange(async (value) => {
+					this.plugin.settings.enableAutoSyncOnStartup = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('STARTUP_DELAY_NAME'))
+			.setDesc(t.t('STARTUP_DELAY_DESC'))
+			.addText(text => text
+				.setPlaceholder('3')
+				.setValue(String(this.plugin.settings.startupSyncDelay))
+				.onChange(async (value) => {
+					this.plugin.settings.startupSyncDelay = Number(value) || 3;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('SKIP_IF_SYNCED_NAME'))
+			.setDesc(t.t('SKIP_IF_SYNCED_DESC'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.skipIfSyncedToday)
+				.onChange(async (value) => {
+					this.plugin.settings.skipIfSyncedToday = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t.t('PERIODIC_SYNC_NAME'))
+			.setDesc(t.t('PERIODIC_SYNC_DESC'))
+			.addText(text => text
+				.setPlaceholder('0')
+				.setValue(String(this.plugin.settings.periodicSyncInterval))
+				.onChange(async (value) => {
+					this.plugin.settings.periodicSyncInterval = Number(value) || 0;
 					await this.plugin.saveSettings();
 				}));
 	}

@@ -1,94 +1,275 @@
-# Obsidian Sample Plugin
+<div align="center"><a name="readme-top"></a>
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+# 🗂️ Yet Another Memos Sync
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+An enhanced Obsidian plugin for synchronizing Memos with daily notes, featuring emoji timeline and intelligent formatting. 📝
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+**English** · [简体中文](./README.zh-CN.md) · [GitHub Repository][github-repo-link] · [Community Plugin][community-plugin-link]
 
-## First time developing plugins?
+[github-repo-link]: https://github.com/exusiaiwei/yet-another-memos-sync
+[community-plugin-link]: https://obsidian.md/plugins?search=yet%20another%20memos%20sync
 
-Quick starting guide for new plugin devs:
+</div>
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## Table of Contents
 
-## Releasing new releases
+- [🗂️ Yet Another Memos Sync](#️-yet-another-memos-sync)
+  - [Table of Contents](#table-of-contents)
+  - [Background](#background)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+  - [Visual Formats](#visual-formats)
+  - [Development](#development)
+  - [Contributing](#contributing)
+  - [License](#license)
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+## Background
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+**Yet Another Memos Sync** is an enhanced Obsidian plugin that seamlessly synchronizes your [Memos](https://usememos.com/) with daily notes. Inspired by the original [obsidian-memos-sync](https://github.com/RyoJerryYu/obsidian-memos-sync) plugin, this version offers advanced features including emoji timeline, intelligent formatting, and robust synchronization strategies.
 
-## Adding your plugin to the community plugin list
+Unlike basic sync tools, it provides visual enhancements, smart synchronization, and supports both modern and legacy Memos API versions.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+## Features
 
-## How to use
+### 🔄 **Smart Synchronization**
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+- **Incremental sync** - Only updates changed content for better performance
+- **Time-limited sync** - Configurable day limits (default: 30 days) to control sync scope
+- **Deletion detection** - Automatically removes deleted memos from your notes
+- **Auto-sync options** - Startup and periodic synchronization capabilities
 
-## Manually installing the plugin
+### 🎨 **Visual Enhancements**
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- **List Callout Style** - Enhanced Markdown lists with emoji timeline (recommended)
+- **Callout Format** - Rich card-style presentation for detailed viewing
+- **Standard Format** - Clean Markdown lists with emoji enhancements
+- **Multi-line support** - Proper indentation handling for complex memo structures
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint ./src/`
+### 🌍 **Internationalization**
 
-## Funding URL
+- **Full i18n support** - English, Chinese, and extensible language system
+- **Auto-detection** - Automatically detects your Obsidian language preference
+- **Consistent UI** - Translated settings interface and user messages
 
-You can include funding URLs where people who use your plugin can financially support it.
+### ⚙️ **Flexible Configuration**
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+- **API version support** - Compatible with Memos v0.25.1 and legacy versions
+- **Custom headers** - Configurable memo section headers for organization
+- **Attachment handling** - Download and organize memo attachments automatically
+- **Daily note integration** - Seamless integration with Daily Notes plugin
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+## Installation
+
+### Community Plugins (Recommended)
+
+1. Open Obsidian Settings → Community plugins
+2. Disable Safe mode if not already disabled
+3. Click "Browse" and search for "Yet Another Memos Sync"
+4. Install and enable the plugin
+
+### Manual Installation
+
+1. Download the latest release from [GitHub Releases](https://github.com/exusiaiwei/yet-another-memos-sync/releases)
+2. Extract the files to `<vault>/.obsidian/plugins/yet-another-memos-sync/`
+3. Reload Obsidian and enable the plugin in Settings → Community Plugins
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/exusiaiwei/yet-another-memos-sync.git
+cd yet-another-memos-sync
+
+# Install dependencies
+npm install
+
+# Build the plugin
+npm run build
 ```
 
-If you have multiple URLs, you can also do:
+## Configuration
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+### Basic Setup
+
+1. Open **Settings** → **Yet Another Memos Sync**
+2. Configure your Memos server:
+   - **API URL**: Your Memos server address (e.g., `https://your-memos.com`)
+   - **API Token**: Generate from your Memos settings page
+   - **API Version**: Select your server version (v0.25.1 recommended)
+
+### Visual Style Selection
+
+Choose one format that best suits your workflow:
+
+- **🎨 List Callout Style**: Enhanced lists with emoji timeline (recommended with [List Callouts plugin](https://github.com/mgmeyers/obsidian-list-callouts))
+- **📋 Callout Format**: Rich card-style presentation for detailed viewing
+- **📝 Standard Format**: Simple emoji-enhanced Markdown lists
+
+### Advanced Configuration
+
+<details>
+<summary><strong>📝 Sync Settings</strong></summary>
+
+- **Sync Days Limit**: Control sync scope (0 = unlimited, default: 30 days)
+- **Daily Note Headers**: Customize memo section titles
+- **Auto-create Notes**: Automatically create missing daily note files
+- **Attachment Folder**: Configure memo attachment storage location
+
+</details>
+
+<details>
+<summary><strong>🔄 Auto-Sync Options</strong></summary>
+
+- **Startup Sync**: Automatically sync when Obsidian starts
+- **Startup Delay**: Wait time before initial sync (default: 5 seconds)
+- **Skip if Synced Today**: Avoid duplicate syncs on the same day
+- **Periodic Sync**: Regular interval syncing (0 = disabled)
+
+</details>
+
+## Usage
+
+### Basic Operations
+
+- **🔄 Manual Sync**: Click the sync button in the ribbon or use Command Palette (`Ctrl/Cmd + P` → "Sync Memos")
+- **⚡ Force Sync**: Re-sync all memos, ignoring incremental sync cache
+- **🤖 Auto Sync**: Automatically syncs on Obsidian startup and at periodic intervals (if enabled)
+
+### Command Palette Commands
+
+- `Yet Another Memos Sync: Sync Memos` - Standard incremental sync
+- `Yet Another Memos Sync: Force Sync All Memos` - Complete re-sync
+- `Yet Another Memos Sync: Open Settings` - Quick access to plugin settings
+
+## Visual Formats
+
+### 🎨 List Callout Style (Recommended)
+
+The List Callout style creates beautiful, themed memo lists that integrate seamlessly with the [List Callouts plugin](https://github.com/mgmeyers/obsidian-list-callouts):
+
+```markdown
+- 🌅 07:30 Morning coffee and planning the day
+  - Reviewed project timeline
+  - Prepared meeting agenda
+- ☀️ 14:20 Productive afternoon work session
+- 🌆 18:30 Evening wrap-up and notes review
+- 🌙 22:15 Late night reading session
 ```
 
-## API Documentation
+*When paired with List Callouts plugin, each time period gets beautiful colored themes*
 
-See https://github.com/obsidianmd/obsidian-api
+### 📋 Time Period Mapping
+
+The plugin uses a simplified 4-period emoji system for intuitive time organization:
+
+| **Period** | **Emoji** | **Time Range** | **List Callout Theme** | **Description** |
+|------------|-----------|----------------|------------------------|-----------------|
+| Early Morning | 🌅 | 05:00-12:00 | `[!info]` Blue | Peaceful dawn hours |
+| Noon | ☀️ | 12:00-17:00 | `[!tip]` Green | Energetic daytime |
+| Evening | 🌆 | 17:00-21:00 | `[!warning]` Orange | Warm sunset |
+| Night | 🌙 | 21:00-05:00 | `[!note]` Purple | Quiet nighttime |
+
+### 🔄 Other Format Examples
+
+#### Callout Format
+
+```markdown
+> [!memo] 🌅 07:30 Morning Memo
+> Planning the day with coffee ☕
+> - Review project timeline
+> - Prepare meeting agenda
+```
+
+#### Standard Format
+
+```markdown
+- 🌅 07:30 Morning coffee and planning
+- ☀️ 14:20 Productive work session
+- 🌆 18:30 Evening wrap-up
+```
+
+## Development
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn
+
+### Development Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/exusiaiwei/yet-another-memos-sync.git
+cd yet-another-memos-sync
+
+# Install dependencies
+npm install
+
+# Development mode with auto-rebuild
+npm run dev
+
+# Build for production
+npm run build
+
+# Run tests
+npm test
+```
+
+### Supported Memos Versions
+
+- ✅ **v0.25.1** (Latest, recommended)
+- ✅ **v0.24.x** (Fully supported)
+- ✅ **v0.23.x** (Fully supported)
+- ✅ **v0.22.x** (Fully supported)
+- ✅ **v0.21.x** (Fully supported)
+- ✅ **Legacy versions** (v0.20 and below)
+
+## Contributing
+
+We welcome contributions from the community! Here's how you can help:
+
+### Ways to Contribute
+
+- 🐛 **Report bugs** via [GitHub Issues](https://github.com/exusiaiwei/yet-another-memos-sync/issues)
+- 💡 **Suggest features** through [GitHub Discussions](https://github.com/exusiaiwei/yet-another-memos-sync/discussions)
+- 🔀 **Submit pull requests** for improvements
+- 📖 **Improve documentation** and translations
+- 🌟 **Star the repository** to show your support
+
+### Development Guidelines
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+### Acknowledgments
+
+- Thanks to the original [obsidian-memos-sync](https://github.com/RyoJerryYu/obsidian-memos-sync) plugin for inspiration
+- [Memos](https://usememos.com/) for the excellent memo platform
+- [Obsidian](https://obsidian.md/) for the powerful note-taking platform
+- [List Callouts plugin](https://github.com/mgmeyers/obsidian-list-callouts) for beautiful visual themes
+
+---
+
+<div align="center">
+
+### 💝 Support
+
+If this plugin helps you, consider:
+
+- ⭐ **Star this repository**
+- 🐛 **Report issues** to help improve
+- 🔀 **Contribute code** or documentation
+- 💬 **Share feedback** and suggestions
+
+*Made with ❤️ for the Obsidian community*
+
+</div>
