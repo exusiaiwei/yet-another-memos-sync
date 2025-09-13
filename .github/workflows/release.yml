@@ -32,13 +32,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          
+
           cat > release_notes.md << 'EOF'
           ## 🎉 What's New in $tag
 
           ### ✨ Features
           - 🎨 Enhanced List Callout format with simplified 4-period emoji system
-          - 🔄 Improved synchronization with time limits and incremental updates  
+          - 🔄 Improved synchronization with time limits and incremental updates
           - 🌍 Full internationalization support (English/Chinese)
           - ⚙️ Flexible configuration options
 
