@@ -1,7 +1,7 @@
 {
 	"id": "yet-another-memos-sync",
 	"name": "Yet Another Memos Sync",
-	"version": "1.4.3",
+	"version": "1.4.1",
 	"minAppVersion": "1.0.0",
 	"description": "Enhanced Memos sync plugin with emoji timeline and List Callout format support. Features intelligent sync, visual enhancements, and i18n support.",
 	"author": "exusiaiwei",
