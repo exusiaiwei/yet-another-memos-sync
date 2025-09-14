@@ -258,14 +258,9 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 		// Add a helpful note about List Callouts plugin
 		if (this.plugin.settings.useListCalloutFormat) {
 			const listCalloutNote = containerEl.createEl('div', {
-				cls: 'setting-item-description',
-				text: '💡 为获得最佳视觉效果，建议安装 "List Callouts" 插件 (mgmeyers.obsidian-list-callouts)，它可以根据 emoji 自动为列表添加颜色样式。'
+				cls: 'setting-item-description yet-another-memos-sync-callout-note',
+				text: '💡 为获得最佳视觉效果，建议安装 "List Callouts" 插件，它可以根据 emoji 自动为列表添加颜色样式。'
 			});
-			listCalloutNote.style.marginTop = '8px';
-			listCalloutNote.style.padding = '8px';
-			listCalloutNote.style.backgroundColor = 'var(--background-secondary)';
-			listCalloutNote.style.borderRadius = '4px';
-			listCalloutNote.style.fontSize = '0.9em';
 		}
 
 		new Setting(containerEl)

@@ -1,8 +1,18 @@
 /*
-
 This CSS file will be included with your plugin, and
 available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
 */
+
+/* Settings panel styling */
+.yet-another-memos-sync-callout-note {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--background-secondary);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* Plugin specific styles */
+.yet-another-memos-sync-container {
+  /* Container for plugin-specific content */
+}

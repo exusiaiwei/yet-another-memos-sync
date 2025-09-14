@@ -1,3 +1,16 @@
+// Global type definitions
+declare global {
+  interface Window {
+    moment: any;
+    app?: {
+      vault?: {
+        adapter?: any;
+        getConfig?: (key: string) => any;
+      };
+    };
+  }
+}
+
 // Core types for Memos API
 export interface Memo {
   id?: number | string;

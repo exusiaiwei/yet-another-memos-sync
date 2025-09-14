@@ -67,8 +67,8 @@ export interface Translations {
 // 检测Obsidian语言设置
 export function detectLanguage(): SupportedLanguage {
   // 获取Obsidian的语言设置
-  const obsidianLang = (window as any).app?.vault?.adapter?.plugin?.app?.vault?.getConfig?.('language') ||
-                      (moment as any).locale() ||
+  const obsidianLang = window.app?.vault?.getConfig?.('language') ||
+                      (window.moment && window.moment.locale ? window.moment.locale() : null) ||
                       navigator.language ||
                       'en';
 

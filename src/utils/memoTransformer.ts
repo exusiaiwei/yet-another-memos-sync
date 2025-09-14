@@ -62,7 +62,7 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
   }
 
   // Use window.moment for Obsidian compatibility
-  const momentDate = (window as any).moment(timestamp * 1000);
+  const momentDate = window.moment(timestamp * 1000);
   if (!momentDate.isValid()) {
     throw new Error(`Timestamp produces invalid date: ${timestamp}`);
   }

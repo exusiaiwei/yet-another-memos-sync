@@ -50,7 +50,7 @@ export class DailyNoteManager {
     await paginator.foreach(async ([dateStr, memos]) => {
       try {
         // Parse date and get/create daily note
-        const momentDay = (window as any).moment(dateStr);
+        const momentDay = window.moment(dateStr);
         if (!momentDay.isValid()) {
           console.warn(`Invalid date: ${dateStr}`);
           return;

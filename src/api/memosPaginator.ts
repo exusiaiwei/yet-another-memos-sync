@@ -29,7 +29,7 @@ export class SimpleMemosPaginator implements MemosPaginator {
     // Calculate time limit if enabled
     let cutoffTimestamp = 0;
     if (this.syncDaysLimit > 0) {
-      const cutoffDate = (window as any).moment().subtract(this.syncDaysLimit, 'days').startOf('day');
+      const cutoffDate = window.moment().subtract(this.syncDaysLimit, 'days').startOf('day');
       cutoffTimestamp = cutoffDate.unix();
     }
 
@@ -46,14 +46,14 @@ export class SimpleMemosPaginator implements MemosPaginator {
           } else if (memo.createdTs) {
             timestamp = memo.createdTs;
           } else if (memo.createTime) {
-            const momentTime = (window as any).moment(memo.createTime);
+            const momentTime = window.moment(memo.createTime);
             if (!momentTime.isValid()) {
               console.warn(`Invalid createTime format:`, memo.createTime, memo);
               continue;
             }
             timestamp = momentTime.unix();
           } else if (memo.createdAt) {
-            const momentTime = (window as any).moment(memo.createdAt);
+            const momentTime = window.moment(memo.createdAt);
             if (!momentTime.isValid()) {
               console.warn(`Invalid createdAt format:`, memo.createdAt, memo);
               continue;
