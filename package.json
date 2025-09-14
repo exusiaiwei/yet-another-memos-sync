@@ -1,6 +1,6 @@
 {
 	"name": "yet-another-memos-sync",
-	  "version": "1.4.2",
+	"version": "1.4.3",
 	"description": "Enhanced Obsidian plugin for syncing Memos with emoji timeline, List Callout format support and improved deletion detection",
 	"main": "main.js",
 	"scripts": {
