@@ -10,7 +10,7 @@ const path = require('path');
 function extractReleaseNotes(version, language = 'en') {
   const changelogFile = language === 'zh' ? 'CHANGELOG.zh-CN.md' : 'CHANGELOG.md';
   const changelogPath = path.join(__dirname, changelogFile);
-  
+
   if (!fs.existsSync(changelogPath)) {
     console.error(`${changelogFile} not found`);
     process.exit(1);
@@ -18,24 +18,24 @@ function extractReleaseNotes(version, language = 'en') {
 
   const content = fs.readFileSync(changelogPath, 'utf-8');
   const lines = content.split('\n');
-  
+
   // Find the version section
   const versionPattern = new RegExp(`^## \\[${version.replace(/\./g, '\\.')}\\]`);
   let startIndex = -1;
   let endIndex = -1;
-  
+
   for (let i = 0; i < lines.length; i++) {
     if (versionPattern.test(lines[i])) {
       startIndex = i;
       break;
     }
   }
-  
+
   if (startIndex === -1) {
     console.error(`Version ${version} not found in ${changelogFile}`);
     process.exit(1);
   }
-  
+
   // Find the end of this version section (next ## or end of file)
   for (let i = startIndex + 1; i < lines.length; i++) {
     if (lines[i].startsWith('## [')) {
@@ -43,7 +43,7 @@ function extractReleaseNotes(version, language = 'en') {
       break;
     }
   }
-  
+
   if (endIndex === -1) {
     endIndex = lines.length;
   }  // Extract the content between version headers
@@ -91,7 +91,7 @@ try {
   const changelogContentEn = extractReleaseNotes(version, 'en');
   const changelogContentZh = extractReleaseNotes(version, 'zh');
   const releaseNotes = generateReleaseNotes(version, changelogContentEn, changelogContentZh);
-  
+
   // Write to release_notes.md
   fs.writeFileSync('release_notes.md', releaseNotes, 'utf-8');
   console.log(`Bilingual release notes generated for version ${version}`);
