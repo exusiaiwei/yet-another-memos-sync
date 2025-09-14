@@ -78,7 +78,7 @@ export class DailyNoteManager {
     console.log('Attempting incremental sync from', new Date(parseInt(lastTime) * 1000));
     const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
 
-    const newLastTime = await this.processMemos(paginator);
+    const newLastTime = await this.processMemos(paginator, true); // true = incremental sync
 
     if (newLastTime && newLastTime !== lastTime) {
       localStorage.setItem('yams-last-sync-time', newLastTime);
@@ -92,7 +92,7 @@ export class DailyNoteManager {
   /**
    * Process memos and update daily notes
    */
-  private async processMemos(paginator: SimpleMemosPaginator): Promise<string> {
+  private async processMemos(paginator: SimpleMemosPaginator, isIncrementalSync: boolean = false): Promise<string> {
     let lastTime = '';
 
     await paginator.foreach(async ([dateStr, memos]) => {
@@ -115,7 +115,8 @@ export class DailyNoteManager {
         const modifiedContent = this.getDailyNoteModifier().modifyDailyNote(
           currentContent,
           dateStr,
-          memos
+          memos,
+          isIncrementalSync
         );
 
         // Only write if there are actual changes

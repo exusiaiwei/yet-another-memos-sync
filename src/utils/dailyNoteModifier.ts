@@ -27,7 +27,8 @@ export class DailyNoteModifier {
   modifyDailyNote(
     originFileContent: string,
     today: string,
-    fetchedRecordList: Record<string, string>
+    fetchedRecordList: Record<string, string>,
+    isIncrementalSync: boolean = false
   ): string | undefined {
     const header = this.dailyMemosHeader;
     const reg = generateHeaderRegExp(header);
@@ -102,9 +103,12 @@ export class DailyNoteModifier {
     }
 
     // Find deletions (existing memos not in fetched list)
-    for (const timestamp of existingMemos.keys()) {
-      if (!fetchedRecordList[timestamp]) {
-        deletions.add(timestamp);
+    // CRITICAL: Only perform deletion detection in full sync mode!
+    if (!isIncrementalSync) {
+      for (const timestamp of existingMemos.keys()) {
+        if (!fetchedRecordList[timestamp]) {
+          deletions.add(timestamp);
+        }
       }
     }
 
