@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Improved
+
+- **List Callout Format Enhancement**: Multi-line content now automatically merges into single line with space separation for perfect List Callout plugin visual effect. Tags and timestamps naturally appear at the end of content.
+
 ## [1.4.0] - 2025-09-14
 
 ### Added

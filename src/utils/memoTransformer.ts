@@ -99,7 +99,38 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
       timestamp: String(timestamp),
       content: finalContent
     };
-  }  // Original list format
+  }  // List Callout format - merge multiple lines with spaces for better visual effect
+  if (useListCalloutFormat) {
+    // For List Callout format, merge all lines with spaces to maintain background color
+    const mergedContent = content.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    
+    const [firstLine, ...otherLines] = [mergedContent]; // Since it's now a single line
+    const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
+
+    let targetFirstLine = "";
+
+    if (taskMatch) {
+      targetFirstLine = `${taskMatch[1]} ${emoji} ${time} ${taskMatch[2]}`;
+    } else {
+      targetFirstLine = `- ${emoji} ${time} ${firstLine.replace(/^- /, "")}`;
+    }
+
+    targetFirstLine += ` #daily-record ^${timestamp}`;
+
+    // No additional lines needed since content is merged
+    const targetResourceLines = resources?.length ?
+      "\n" + resources.map(resource => `  - ${generateResourceLink(resource)}`).join("\n") : "";
+
+    const finalContent = targetFirstLine + targetResourceLines;
+
+    return {
+      date,
+      timestamp: String(timestamp),
+      content: finalContent
+    };
+  }
+  
+  // Original list format
   const [firstLine, ...otherLines] = content.trim().split("\n");
   const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
   const isCode = /```/.test(firstLine);
