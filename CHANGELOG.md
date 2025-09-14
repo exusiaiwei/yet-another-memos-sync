@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.4.2] - 2024-12-19
+## [1.4.2] - 2025-09-14
 
-### Critical Fix
+### 🚨 Critical Fix
 
 - **CRITICAL:** Fixed smart sync deleting existing memos during incremental synchronization
 - Smart sync now correctly preserves existing memos and only adds new content

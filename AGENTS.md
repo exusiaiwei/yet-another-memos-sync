@@ -249,3 +249,170 @@ this.registerInterval(window.setInterval(() => { /* ... */ }, 1000));
 - Developer policies: https://docs.obsidian.md/Developer+policies
 - Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
 - Style guide: https://help.obsidian.md/style-guide
+
+---
+
+## 🚀 Standard Release Process
+
+### Release Flow Standards (CRITICAL - Always Follow This Order!)
+
+**ALL releases must follow this exact sequence:**
+
+1. **📝 Update Changelog FIRST** - Before any version changes
+2. **🏷️ Use npm version management** - Never manually edit version numbers
+3. **🎯 Trigger GitHub Actions** - Push tags to auto-release
+4. **✅ Verify Release** - Check GitHub release page
+
+### 📋 Changelog Requirements
+
+**Format**: Use semantic versioning with consistent emoji and sections:
+
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### 🎉 Added
+- New features
+
+### 🔧 Fixed  
+- Bug fixes (use 🚨 for critical/security fixes)
+
+### 📈 Improved
+- Enhancements and optimizations
+
+### 💥 Breaking Changes
+- Breaking changes (major version only)
+
+### 🗑️ Removed
+- Deprecated features
+```
+
+**Dual Language**: Always maintain both `CHANGELOG.md` (English) and `CHANGELOG.zh-CN.md` (Chinese).
+
+### 🎯 Emoji Standards for Commits & Releases
+
+**Use consistent emoji in both git commits and npm version messages:**
+
+- 🎉 `feat:` - New features  
+- 🔧 `fix:` - Bug fixes
+- 🚨 `fix:` - Critical/security fixes
+- 📈 `perf:` - Performance improvements  
+- 📝 `docs:` - Documentation updates
+- 🎨 `style:` - Code style changes
+- ♻️ `refactor:` - Code refactoring
+- ✅ `test:` - Adding tests
+- 🔨 `build:` - Build system changes
+- 🚀 `chore:` - Release and maintenance
+
+### 📦 Step-by-Step Release Process
+
+#### 1. 📝 Prepare Changelog (MANDATORY FIRST STEP)
+
+```bash
+# Add new version entry to BOTH changelogs
+# English: CHANGELOG.md
+## [X.Y.Z] - YYYY-MM-DD
+### 🔧 Fixed
+- Description of changes
+
+# Chinese: CHANGELOG.zh-CN.md  
+## [X.Y.Z] - YYYY-MM-DD
+### 🔧 修复问题
+- 变更描述
+```
+
+#### 2. 🏷️ Use npm Version Management (NEVER Manual)
+
+```bash
+# Patch version (bug fixes): X.Y.Z → X.Y.(Z+1)
+npm version patch --message "🔧 chore: release v%s - description"
+
+# Minor version (new features): X.Y.Z → X.(Y+1).0  
+npm version minor --message "🎉 chore: release v%s - description"
+
+# Major version (breaking changes): X.Y.Z → (X+1).0.0
+npm version major --message "💥 chore: release v%s - description"
+```
+
+**npm version automatically:**
+- Updates `package.json` version
+- Runs `version-bump.mjs` script to sync `manifest.json` and `versions.json`
+- Creates git commit with version message
+- Creates git tag matching the version
+
+#### 3. 🚀 Push and Trigger Auto-Release
+
+```bash
+# Push code and tags to trigger GitHub Actions
+git push origin master --tags
+```
+
+**GitHub Actions will automatically:**
+- Build the plugin (`main.js`)
+- Generate bilingual release notes from changelog
+- Create GitHub release with artifacts
+- Use YAMS branding in release titles
+
+#### 4. ✅ Verify Release
+
+- Check GitHub releases page
+- Verify artifacts are attached (`main.js`, `manifest.json`, `styles.css`)
+- Confirm bilingual release notes are generated
+- Test plugin installation
+
+### 🚨 Emergency Hotfix Process
+
+For critical bugs requiring immediate release:
+
+1. **📝 Add emergency changelog entry** with 🚨 emoji
+2. **🔧 Use patch version**: `npm version patch --message "🚨 chore: emergency fix v%s - critical bug description"`
+3. **🚀 Immediate push**: `git push origin master --tags`
+4. **📢 Notify users** through appropriate channels
+
+### ❌ Common Mistakes to Avoid
+
+**DON'T:**
+- ❌ Manually edit version numbers in `package.json`, `manifest.json`, or `versions.json`
+- ❌ Create git tags manually with `git tag`
+- ❌ Skip updating changelog before version bump
+- ❌ Use inconsistent emoji between commits and releases
+- ❌ Forget to push tags (`--tags` flag is required)
+- ❌ Release without updating both English and Chinese changelogs
+
+**DO:**
+- ✅ Always update changelog first
+- ✅ Use `npm version` for all version management  
+- ✅ Use consistent emoji standards
+- ✅ Maintain bilingual documentation
+- ✅ Test builds before releasing
+- ✅ Follow semantic versioning principles
+
+### 🔄 Version Rollback Process
+
+If a release needs to be rolled back:
+
+1. **🗑️ Delete the problematic tag**: `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`
+2. **↩️ Revert version**: Edit `package.json` to previous version  
+3. **🔧 Run version sync**: `node version-bump.mjs`
+4. **📝 Update changelog**: Remove the problematic entry
+5. **🚀 Re-release**: Follow standard process from step 1
+
+### 📋 Release Checklist Template
+
+**Pre-Release:**
+- [ ] 📝 Updated both `CHANGELOG.md` and `CHANGELOG.zh-CN.md`
+- [ ] 🔧 All bug fixes tested and verified
+- [ ] 🏗️ Build passes (`npm run build`)
+- [ ] 📖 Documentation updated if needed
+
+**Release:**
+- [ ] 🏷️ Used `npm version [patch|minor|major]` with appropriate emoji message
+- [ ] 🚀 Pushed with tags: `git push origin master --tags`
+- [ ] ⏱️ GitHub Actions workflow triggered and completed
+- [ ] 📦 Artifacts present in GitHub release
+
+**Post-Release:**
+- [ ] ✅ Plugin installation tested
+- [ ] 📢 Release announcement (if major)
+- [ ] 🐛 Monitor for issues and user feedback
+
+This standard ensures consistency, automation, and reduces release errors. Always follow this process for any version release!
