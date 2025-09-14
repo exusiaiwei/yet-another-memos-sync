@@ -37,6 +37,6 @@ jobs:
           node generate-release-notes.js "$tag"
 
           gh release create "$tag" \
-            --title="🗂️ Yet Another Memos Sync $tag" \
+            --title="🗂️ YAMS v$tag" \
             --notes-file=release_notes.md \
             main.js manifest.json styles.css
