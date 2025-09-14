@@ -416,3 +416,80 @@ If a release needs to be rolled back:
 - [ ] 🐛 Monitor for issues and user feedback
 
 This standard ensures consistency, automation, and reduces release errors. Always follow this process for any version release!
+
+---
+
+## 🌳 Branch Management Strategy
+
+### Branch Structure
+
+**`master` - Production Branch (Protected)**
+- Only for stable releases
+- All releases are tagged from this branch
+- Direct pushes should be avoided
+- Changes come through PR merges from `dev`
+
+**`dev` - Development Branch**
+- Main development branch for new features and fixes
+- All daily development happens here
+- Feature branches merge into `dev`
+- Regular testing and integration
+
+**`feature/*` - Feature Branches (Optional)**
+- For larger features that need isolation
+- Branch from `dev`, merge back to `dev`
+- Naming: `feature/description-of-feature`
+
+### Development Workflow
+
+#### Daily Development
+1. **Switch to dev branch**: `git checkout dev`
+2. **Pull latest changes**: `git pull origin dev`
+3. **Create feature branch** (for larger features): `git checkout -b feature/new-feature`
+4. **Make changes and commit** using emoji standards
+5. **Push and create PR** to `dev` branch
+
+#### Release Process
+1. **Ensure dev is stable** and all features tested
+2. **Create release PR**: `dev` → `master`
+3. **On master branch**: Follow standard release process
+   - Update changelog
+   - Run `npm version [patch|minor|major]`
+   - Push tags to trigger auto-release
+4. **Merge master back to dev**: Keep branches in sync
+
+### Branch Protection Rules (Recommended)
+
+**For `master` branch:**
+- Require pull request reviews
+- Require status checks to pass
+- Require branches to be up to date
+- Restrict pushes to this branch
+
+**For `dev` branch:**
+- Allow direct pushes for maintainers
+- Require status checks for external contributors
+
+### Quick Commands
+
+```bash
+# Start new development
+git checkout dev
+git pull origin dev
+
+# Create feature branch
+git checkout -b feature/my-feature
+
+# Switch between branches
+git checkout dev
+git checkout master
+
+# Sync master changes to dev
+git checkout dev
+git merge master
+
+# Create release (on master)
+git checkout master
+git merge dev
+# Then follow release process
+```
