@@ -103,7 +103,7 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
   if (useListCalloutFormat) {
     // For List Callout format, merge all lines with spaces to maintain background color
     const mergedContent = content.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
-    
+
     const [firstLine, ...otherLines] = [mergedContent]; // Since it's now a single line
     const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
 
@@ -129,7 +129,7 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
       content: finalContent
     };
   }
-  
+
   // Original list format
   const [firstLine, ...otherLines] = content.trim().split("\n");
   const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
