@@ -43,13 +43,19 @@ export default class YetAnotherMemosSyncPlugin extends Plugin {
 
 		// Add ribbon icon
 		this.addRibbonIcon('sync', t.t('SYNC_MEMOS'), () => {
-			this.syncMemos();
+			this.smartSyncMemos();
 		});
 
 		// Add commands
 		this.addCommand({
 			id: 'sync-memos',
 			name: t.t('SYNC_MEMOS'),
+			callback: () => this.smartSyncMemos()
+		});
+
+		this.addCommand({
+			id: 'incremental-sync-memos',
+			name: t.t('INCREMENTAL_SYNC_MEMOS'),
 			callback: () => this.syncMemos()
 		});
 
@@ -88,6 +94,17 @@ export default class YetAnotherMemosSyncPlugin extends Plugin {
 		this.schedulePeriodicSync(); // Reschedule periodic sync when settings change
 	}
 
+	private async smartSyncMemos() {
+		try {
+			new Notice(t.t('SYNC_STARTING'));
+			await this.dailyNoteManager.smartSync();
+			new Notice(t.t('SYNC_SUCCESS'));
+		} catch (error) {
+			console.error('Smart sync failed:', error);
+			new Notice(`${t.t('SYNC_FAILED')}: ${error.message}`);
+		}
+	}
+
 	private async syncMemos() {
 		try {
 			new Notice(t.t('SYNC_STARTING'));
@@ -120,7 +137,7 @@ export default class YetAnotherMemosSyncPlugin extends Plugin {
 		}
 
 		setTimeout(() => {
-			this.syncMemos();
+			this.smartSyncMemos();
 		}, this.settings.startupSyncDelay * 1000);
 	}
 
@@ -131,7 +148,7 @@ export default class YetAnotherMemosSyncPlugin extends Plugin {
 
 		if (this.settings.periodicSyncInterval > 0) {
 			this.periodicSyncInterval = window.setInterval(() => {
-				this.syncMemos();
+				this.smartSyncMemos();
 			}, this.settings.periodicSyncInterval * 60 * 1000);
 		}
 	}
