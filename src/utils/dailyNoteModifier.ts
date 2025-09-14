@@ -2,6 +2,8 @@
  * Daily Note Modifier - handles updating daily notes with memos
  */
 
+import { mergeTodoStates, isSameExceptTodoStates } from './todoStateManager';
+
 /**
  * Generate regex for finding header section in daily note
  */
@@ -76,9 +78,24 @@ export class DailyNoteModifier {
     // Find additions and updates
     for (const [timestamp, content] of Object.entries(fetchedRecordList)) {
       if (existingMemos.has(timestamp)) {
-        if (existingMemos.get(timestamp) !== content) {
-          updates.set(timestamp, content);
+        const existingContent = existingMemos.get(timestamp)!;
+        const remoteContent = content;
+
+        // Check if contents are the same except for todo states
+        if (isSameExceptTodoStates(existingContent, remoteContent)) {
+          // Merge todo states: preserve local completion status
+          const mergedContent = mergeTodoStates(existingContent, remoteContent);
+          if (mergedContent !== existingContent) {
+            updates.set(timestamp, mergedContent);
+          }
+          // If merged content is same as existing, no update needed
+        } else if (existingContent !== remoteContent) {
+          // Content has changed beyond just todo states
+          // Still merge todo states but update the content
+          const mergedContent = mergeTodoStates(existingContent, remoteContent);
+          updates.set(timestamp, mergedContent);
         }
+        // If contents are exactly the same, no update needed
       } else {
         additions.set(timestamp, content);
       }

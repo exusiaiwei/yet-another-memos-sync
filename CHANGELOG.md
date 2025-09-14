@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2025-09-14
+
+### Added
+
+- **Smart Sync**: New intelligent sync mode that automatically detects whether to perform incremental or full sync
+- **Todo State Preservation**: 🎯 **IMPORTANT** - Sync now intelligently preserves local todo completion states (- [ ] → - [x]) when merging with remote content
+- **Three Sync Modes**:
+  - Smart Sync (default): Automatically chooses between incremental and full sync
+  - Incremental Sync: Only syncs new memos since last sync
+  - Force Sync: Complete resync of all memos, overwriting local changes
+
+### Fixed
+
+- **Incremental Sync Logic**: Fixed issue where incremental sync wasn't working properly - now only processes memos newer than last sync time
+- **Sync Efficiency**: Improved sync performance by properly filtering memos at API level instead of processing all memos
+
+### Changed
+
+- **Default Sync Behavior**: Changed default sync command to use Smart Sync for better user experience
+- **Command Names**: Updated command names to be more descriptive of their actual behavior
+
 ## [1.3.1] - 2024-09-14
 
 ### Fixed

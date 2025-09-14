@@ -44,7 +44,8 @@ export const enTranslations: Translations = {
   PERIODIC_SYNC_DESC: 'Set to 0 to disable periodic sync',
 
   // Buttons and commands
-  SYNC_MEMOS: 'Sync Memos',
+  SYNC_MEMOS: 'Smart Sync Memos',
+  INCREMENTAL_SYNC_MEMOS: 'Incremental Sync (New Only)',
   FORCE_SYNC_MEMOS: 'Force Sync All Memos',
 
   // Notification messages

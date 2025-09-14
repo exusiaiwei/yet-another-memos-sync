@@ -49,6 +49,7 @@ export interface Translations {
 
   // 按钮和命令
   SYNC_MEMOS: string;
+  INCREMENTAL_SYNC_MEMOS: string;
   FORCE_SYNC_MEMOS: string;
 
   // 通知消息

@@ -33,9 +33,13 @@ export class SimpleMemosPaginator implements MemosPaginator {
       cutoffTimestamp = cutoffDate.unix();
     }
 
+    // Parse lastTime for incremental sync
+    const lastTimestamp = this.lastTime ? parseInt(this.lastTime) : 0;
+
     try {
       // Fetch all memos (complete sync for deletion detection)
       const memos = await this.client.listMemos(1000, 0);
+      console.log(`Fetched ${memos.length} memos, lastTime: ${this.lastTime}, incremental: ${lastTimestamp > 0}`);
 
       for (const memo of memos) {
         try {
@@ -66,6 +70,11 @@ export class SimpleMemosPaginator implements MemosPaginator {
 
           // Skip memos outside the time limit
           if (cutoffTimestamp > 0 && timestamp < cutoffTimestamp) {
+            continue;
+          }
+
+          // For incremental sync, skip memos that are not newer than lastTime
+          if (lastTimestamp > 0 && timestamp <= lastTimestamp) {
             continue;
           }
 

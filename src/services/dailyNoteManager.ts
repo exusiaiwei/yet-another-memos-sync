@@ -54,11 +54,39 @@ export class DailyNoteManager {
    * Force sync all memos (ignore last time)
    */
   async forceSync(): Promise<void> {
+    console.log('Starting force sync - will overwrite all local content');
     const paginator = new SimpleMemosPaginator(this.apiClient, '', this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
 
     const newLastTime = await this.processMemos(paginator);
     localStorage.setItem('yams-last-sync-time', newLastTime);
     localStorage.setItem('yams-last-sync-date', new Date().toDateString());
+  }
+
+  /**
+   * Smart sync - detects if local content was modified and handles accordingly
+   */
+  async smartSync(): Promise<void> {
+    const lastTime = localStorage.getItem('yams-last-sync-time') || '';
+
+    if (!lastTime) {
+      console.log('No previous sync found, performing full sync');
+      await this.forceSync();
+      return;
+    }
+
+    // First try incremental sync
+    console.log('Attempting incremental sync from', new Date(parseInt(lastTime) * 1000));
+    const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
+
+    const newLastTime = await this.processMemos(paginator);
+
+    if (newLastTime && newLastTime !== lastTime) {
+      localStorage.setItem('yams-last-sync-time', newLastTime);
+      localStorage.setItem('yams-last-sync-date', new Date().toDateString());
+      console.log('Incremental sync completed, updated lastTime to', new Date(parseInt(newLastTime) * 1000));
+    } else {
+      console.log('No new memos found since last sync');
+    }
   }
 
   /**

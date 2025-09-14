@@ -44,7 +44,8 @@ export const zhCnTranslations: Translations = {
   PERIODIC_SYNC_DESC: '设置为 0 禁用定期同步',
 
   // Buttons and commands
-  SYNC_MEMOS: '同步备忘录',
+  SYNC_MEMOS: '智能同步备忘录',
+  INCREMENTAL_SYNC_MEMOS: '增量同步（仅新内容）',
   FORCE_SYNC_MEMOS: '强制同步所有备忘录',
 
   // Notification messages
