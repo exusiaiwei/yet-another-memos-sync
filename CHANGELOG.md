@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2024-09-14
+
+### Fixed
+
+- **Settings Real-time Update**: Fixed issue where changing memos header settings required plugin restart to take effect. Now settings changes are applied immediately.
+
 ## [1.1.0] - 2024-09-14
 
 ### Added

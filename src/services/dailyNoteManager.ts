@@ -9,13 +9,33 @@ export class DailyNoteManager {
   private app: App;
   private settings: MemosSettings;
   private apiClient: MemosAPIClient;
-  private dailyNoteModifier: DailyNoteModifier;
 
   constructor(app: App, settings: MemosSettings) {
     this.app = app;
     this.settings = settings;
-    this.apiClient = new MemosAPIClient(settings.apiUrl, settings.apiToken, settings.apiVersion);
-    this.dailyNoteModifier = new DailyNoteModifier(settings.dailyMemoHeader);
+    this.updateAPIClient();
+  }
+
+  /**
+   * Update settings and refresh dependent services
+   */
+  updateSettings(settings: MemosSettings): void {
+    this.settings = settings;
+    this.updateAPIClient();
+  }
+
+  /**
+   * Update API client with current settings
+   */
+  private updateAPIClient(): void {
+    this.apiClient = new MemosAPIClient(this.settings.apiUrl, this.settings.apiToken, this.settings.apiVersion);
+  }
+
+  /**
+   * Get current daily note modifier with latest settings
+   */
+  private getDailyNoteModifier(): DailyNoteModifier {
+    return new DailyNoteModifier(this.settings.dailyMemoHeader);
   }
 
   /**
@@ -64,7 +84,7 @@ export class DailyNoteManager {
 
         // Update the daily note content only if there are changes
         const currentContent = await this.app.vault.read(dailyNote);
-        const modifiedContent = this.dailyNoteModifier.modifyDailyNote(
+        const modifiedContent = this.getDailyNoteModifier().modifyDailyNote(
           currentContent,
           dateStr,
           memos

@@ -83,6 +83,8 @@ export default class YetAnotherMemosSyncPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		// Update the daily note manager with new settings
+		this.dailyNoteManager.updateSettings(this.settings);
 		this.schedulePeriodicSync(); // Reschedule periodic sync when settings change
 	}
 
