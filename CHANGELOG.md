@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-02-23
+
+### Added
+
+- **Skip Images Option**: New toggle in settings to skip image resources during sync, preventing image files from polluting the Obsidian vault
+- When enabled, only non-image resources are included in synced memos
+- Image resources with `type` containing "image" are filtered out
+
 ## [1.4.2] - 2025-09-14
 
 ### 🚨 Critical Fix
