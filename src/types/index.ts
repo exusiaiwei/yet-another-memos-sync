@@ -53,6 +53,7 @@ export interface MemosSettings {
   createMissingDailyNotes: boolean;
   useCalloutFormat: boolean;
   useListCalloutFormat: boolean; // 新的 List Callout 格式
+  skipImages: boolean; // 不同步图片资源
   syncDaysLimit: number; // 限制同步多少天内的备忘录，0表示无限制
 
   // Auto Sync Settings

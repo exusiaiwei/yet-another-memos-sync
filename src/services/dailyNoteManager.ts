@@ -43,7 +43,7 @@ export class DailyNoteManager {
    */
   async sync(): Promise<void> {
     const lastTime = localStorage.getItem('yams-last-sync-time') || '';
-    const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
+    const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.skipImages, this.settings.syncDaysLimit);
 
     const newLastTime = await this.processMemos(paginator);
     localStorage.setItem('yams-last-sync-time', newLastTime);
@@ -55,7 +55,7 @@ export class DailyNoteManager {
    */
   async forceSync(): Promise<void> {
     console.log('Starting force sync - will overwrite all local content');
-    const paginator = new SimpleMemosPaginator(this.apiClient, '', this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
+    const paginator = new SimpleMemosPaginator(this.apiClient, '', this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.skipImages, this.settings.syncDaysLimit);
 
     const newLastTime = await this.processMemos(paginator);
     localStorage.setItem('yams-last-sync-time', newLastTime);
@@ -76,7 +76,7 @@ export class DailyNoteManager {
 
     // First try incremental sync
     console.log('Attempting incremental sync from', new Date(parseInt(lastTime) * 1000));
-    const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.syncDaysLimit);
+    const paginator = new SimpleMemosPaginator(this.apiClient, lastTime, this.settings.useCalloutFormat, this.settings.useListCalloutFormat, this.settings.skipImages, this.settings.syncDaysLimit);
 
     const newLastTime = await this.processMemos(paginator, true); // true = incremental sync
 

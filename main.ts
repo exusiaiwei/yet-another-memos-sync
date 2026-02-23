@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS: MemosSettings = {
   createMissingDailyNotes: true,
   useCalloutFormat: false,
   useListCalloutFormat: false,
+  skipImages: false,
   syncDaysLimit: 30, // 默认只同步最近30天
 
   // Auto Sync Settings
@@ -281,6 +282,16 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 				text: '💡 为获得最佳视觉效果，建议安装 "List Callouts" 插件，它可以根据 emoji 自动为列表添加颜色样式。'
 			});
 		}
+
+		new Setting(containerEl)
+			.setName('跳过图片')
+			.setDesc('同步时不包含图片资源，避免图片污染 Obsidian 库')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.skipImages)
+				.onChange(async (value) => {
+					this.plugin.settings.skipImages = value;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl)
 			.setName(t.t('SYNC_DAYS_LIMIT_NAME'))

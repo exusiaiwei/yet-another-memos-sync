@@ -9,13 +9,15 @@ export class SimpleMemosPaginator implements MemosPaginator {
   private lastTime: string;
   private useCalloutFormat: boolean;
   private useListCalloutFormat: boolean;
+  private skipImages: boolean;
   private syncDaysLimit: number;
 
-  constructor(client: APIClient, lastTime: string = '', useCalloutFormat: boolean = false, useListCalloutFormat: boolean = false, syncDaysLimit: number = 30) {
+  constructor(client: APIClient, lastTime: string = '', useCalloutFormat: boolean = false, useListCalloutFormat: boolean = false, skipImages: boolean = false, syncDaysLimit: number = 30) {
     this.client = client;
     this.lastTime = lastTime;
     this.useCalloutFormat = useCalloutFormat;
     this.useListCalloutFormat = useListCalloutFormat;
+    this.skipImages = skipImages;
     this.syncDaysLimit = syncDaysLimit;
   }
 
@@ -83,7 +85,7 @@ export class SimpleMemosPaginator implements MemosPaginator {
             timestamp,
             content: memo.content,
             resources: memo.resourceList || memo.resources || []
-          }, this.useCalloutFormat, this.useListCalloutFormat);
+          }, this.useCalloutFormat, this.useListCalloutFormat, this.skipImages);
 
           // Group by date
           if (!dailyMemosByDay[dailyMemo.date]) {

@@ -53,8 +53,13 @@ export function getListCalloutEmoji(hour: number): string {
 /**
  * Transform API memo to markdown format with emoji enhancement
  */
-export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, useListCalloutFormat = false): DailyMemo {
-  const { timestamp, content, resources } = memo;
+export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, useListCalloutFormat = false, skipImages = false): DailyMemo {
+  const { timestamp, content } = memo;
+
+  // Filter out image resources if skipImages is enabled
+  const resources = skipImages
+    ? (memo.resources || []).filter(r => !r.type?.includes('image'))
+    : memo.resources;
 
   // Validate timestamp
   if (typeof timestamp !== 'number' || !isFinite(timestamp) || timestamp <= 0) {
