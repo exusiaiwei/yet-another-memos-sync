@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-05-06
+
+### Added
+
+- **Multi-Profile Sync**: Configure multiple Memos accounts/instances and sync them all into the same vault. Each profile writes to its own daily-note section so accounts never collide. Useful for syncing several family or team members' memos side-by-side.
+- **CEL Filter for Incremental Sync**: Incremental sync now passes `created_ts > <lastSyncTime>` to the server, so only new memos are returned over the wire instead of fetching everything and filtering on the client.
+
+### Fixed
+
+- **Pagination Truncation (data loss)**: The previous client capped sync at 1000 memos because `pageToken` was incorrectly populated with a numeric offset. Vaults with more than 1000 memos silently lost history. Sync now follows `nextPageToken` until exhausted.
+- **Missing Attachments on v0.27+**: Memos v0.27 renamed `resources` to `attachments`. The plugin now reads `attachments` first and falls back to the legacy fields for older servers.
+- **Startup setTimeout Leak**: The auto-sync startup timer was not cleared on plugin unload.
+
+### Changed
+
+- **Sync State Storage**: Last-sync timestamp moved from `localStorage` into plugin data, so Obsidian Sync replicates state across devices instead of each machine starting from scratch.
+- **API Client**: Dropped the API-version dropdown. The plugin now always targets `/api/v1/memos`, simplifying the codebase. Existing settings migrate automatically into a default profile.
+
 ## [1.5.0] - 2026-02-23
 
 ### Added

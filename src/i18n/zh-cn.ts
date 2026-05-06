@@ -19,6 +19,17 @@ export const zhCnTranslations: Translations = {
   API_VERSION_NAME: 'API 版本',
   API_VERSION_DESC: '选择您的 Memos 服务器版本',
 
+  // Profiles
+  PROFILES_TITLE: '账户配置',
+  PROFILES_DESC: '每个账户对应一个 Memos 实例（或同一实例下的不同用户），各自写入独立的日记 section。可以添加多个账户把多名成员的内容同步到同一个库。',
+  PROFILE_NAME_LABEL: '账户名称',
+  PROFILE_NAME_DESC: '显示名称，也会出现在同步日志中',
+  PROFILE_ENABLED_LABEL: '启用',
+  ADD_PROFILE: '添加账户',
+  REMOVE_PROFILE: '删除',
+  REMOVE_PROFILE_CONFIRM: '确定删除该账户？已同步到库里的内容不会被清除。',
+  NO_PROFILES_HINT: '还没有账户配置 — 点击"添加账户"来配置第一个 Memos 账户。',
+
   // Sync settings
   DAILY_HEADER_NAME: '日记备忘录标题',
   DAILY_HEADER_DESC: '在日记中显示备忘录的标题',

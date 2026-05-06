@@ -23,6 +23,17 @@ export interface Translations {
   API_VERSION_NAME: string;
   API_VERSION_DESC: string;
 
+  // Profiles
+  PROFILES_TITLE: string;
+  PROFILES_DESC: string;
+  PROFILE_NAME_LABEL: string;
+  PROFILE_NAME_DESC: string;
+  PROFILE_ENABLED_LABEL: string;
+  ADD_PROFILE: string;
+  REMOVE_PROFILE: string;
+  REMOVE_PROFILE_CONFIRM: string;
+  NO_PROFILES_HINT: string;
+
   // 同步设置
   DAILY_HEADER_NAME: string;
   DAILY_HEADER_DESC: string;

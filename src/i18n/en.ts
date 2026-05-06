@@ -19,6 +19,17 @@ export const enTranslations: Translations = {
   API_VERSION_NAME: 'API Version',
   API_VERSION_DESC: 'Select your Memos server version',
 
+  // Profiles
+  PROFILES_TITLE: 'Profiles',
+  PROFILES_DESC: 'Each profile maps a Memos account/instance to its own daily-note section. Add multiple to sync several members into the same vault.',
+  PROFILE_NAME_LABEL: 'Profile Name',
+  PROFILE_NAME_DESC: 'Display name; also used in the sync log',
+  PROFILE_ENABLED_LABEL: 'Enabled',
+  ADD_PROFILE: 'Add profile',
+  REMOVE_PROFILE: 'Remove',
+  REMOVE_PROFILE_CONFIRM: 'Remove this profile? Synced content stays in your vault.',
+  NO_PROFILES_HINT: 'No profiles yet — click "Add profile" to configure your first Memos account.',
+
   // Sync settings
   DAILY_HEADER_NAME: 'Daily Notes Header',
   DAILY_HEADER_DESC: 'Header text for memos section in daily notes',
