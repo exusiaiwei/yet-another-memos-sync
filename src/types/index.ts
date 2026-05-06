@@ -11,7 +11,7 @@ declare global {
   }
 }
 
-// Core types for Memos API
+// Core types for Memos API (v0.22+ uses /api/v1; older `createdTs` kept for compat)
 export interface Memo {
   id?: number | string;
   name?: string;
@@ -21,6 +21,7 @@ export interface Memo {
   createdTs?: number;
   createdAt?: string;
   createTime?: string;
+  attachments?: Resource[];
   resourceList?: Resource[];
   resources?: Resource[];
 }
@@ -41,31 +42,51 @@ export interface DailyMemo {
   content: string;
 }
 
-export interface MemosSettings {
-  // API Configuration
+export interface MemosProfile {
+  id: string;
+  name: string;
   apiUrl: string;
   apiToken: string;
-  apiVersion: string;
-
-  // Sync Settings
   dailyMemoHeader: string;
+  syncDaysLimit: number;
+  enabled: boolean;
+}
+
+export interface MemosSettings {
+  // Profiles - one per memos account/instance
+  profiles: MemosProfile[];
+
+  // Shared formatting settings
   attachmentFolderPath: string;
   createMissingDailyNotes: boolean;
   useCalloutFormat: boolean;
-  useListCalloutFormat: boolean; // 新的 List Callout 格式
-  skipImages: boolean; // 不同步图片资源
-  syncDaysLimit: number; // 限制同步多少天内的备忘录，0表示无限制
+  useListCalloutFormat: boolean;
+  skipImages: boolean;
 
-  // Auto Sync Settings
+  // Auto sync
   enableAutoSyncOnStartup: boolean;
   startupSyncDelay: number;
   skipIfSyncedToday: boolean;
-  periodicSyncInterval: number; // 0 means disabled
+  periodicSyncInterval: number;
+
+  // Persisted sync state (per profile id -> latest synced unix seconds)
+  lastSyncByProfile: Record<string, string>;
+  lastSyncDate: string;
+}
+
+export interface ListMemosPage {
+  memos: Memo[];
+  nextPageToken: string;
+}
+
+export interface ListMemosOptions {
+  pageSize?: number;
+  pageToken?: string;
+  filter?: string;
 }
 
 export interface APIClient {
-  listMemos(limit?: number, offset?: number): Promise<Memo[]>;
-  downloadResource(resource: Resource): Promise<void>;
+  listMemos(opts?: ListMemosOptions): Promise<ListMemosPage>;
 }
 
 export interface MemosPaginator {
