@@ -57,7 +57,7 @@ function defaultProfile(): MemosProfile {
  */
 function migrateSettings(raw: unknown): MemosSettings {
 	const legacy = (raw && typeof raw === 'object' ? raw : {}) as LegacySettings;
-	const merged: MemosSettings = { ...DEFAULT_SETTINGS, ...(legacy as object) } as MemosSettings;
+	const merged: MemosSettings = { ...DEFAULT_SETTINGS, ...(legacy as object) };
 
 	if (!Array.isArray(merged.profiles) || merged.profiles.length === 0) {
 		const legacyApiUrl = typeof legacy.apiUrl === 'string' ? legacy.apiUrl : '';
@@ -162,7 +162,7 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 	}
 
 	async loadSettings(): Promise<void> {
-		const raw = await this.loadData();
+		const raw: unknown = await this.loadData();
 		this.settings = migrateSettings(raw);
 		// Persist migration result so legacy fields don't linger
 		await this.saveData(this.settings);
@@ -416,10 +416,13 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 				}));
 
 		if (this.plugin.settings.useListCalloutFormat) {
-			containerEl.createEl('div', {
+			const hint = containerEl.createEl('div', {
 				cls: 'setting-item-description yet-another-memos-sync-callout-note',
-				text: '💡 为获得最佳视觉效果，建议安装 "List Callouts" 插件，它可以根据 emoji 自动为列表添加颜色样式。',
 			});
+			hint.appendText('💡 为获得最佳视觉效果，建议安装 ');
+			// eslint-disable-next-line obsidianmd/ui/sentence-case -- proper plugin name
+			hint.createEl('strong', { text: 'List Callouts' });
+			hint.appendText(' 插件，它可以根据 emoji 自动为列表添加颜色样式。');
 		}
 
 		new Setting(containerEl)

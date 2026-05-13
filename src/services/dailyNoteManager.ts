@@ -1,6 +1,7 @@
 import { App, TFile, moment } from 'obsidian';
-import type { Moment } from 'moment';
 import { getDailyNote, createDailyNote, getAllDailyNotes } from 'obsidian-daily-notes-interface';
+
+type MomentInstance = ReturnType<typeof moment>;
 import { MemosAPIClient } from '../api/memosClient';
 import { SimpleMemosPaginator } from '../api/memosPaginator';
 import { DailyNoteModifier } from '../utils/dailyNoteModifier';
@@ -108,7 +109,6 @@ export class DailyNoteManager {
 
         if (modifiedContent && modifiedContent !== currentContent) {
           await this.app.vault.modify(dailyNote, modifiedContent);
-          console.log(`[${profile.name}] Updated ${dateStr} with ${Object.keys(memos).length} memos`);
         }
 
         const timestamps = Object.keys(memos);
@@ -126,13 +126,21 @@ export class DailyNoteManager {
     return lastTime;
   }
 
-  private async getOrCreateDailyNote(momentDay: Moment): Promise<TFile | null> {
+  private async getOrCreateDailyNote(momentDay: MomentInstance): Promise<TFile | null> {
     try {
-      let dailyNote: TFile | null = getDailyNote(momentDay, getAllDailyNotes());
-      if (!dailyNote && this.settings.createMissingDailyNotes) {
-        dailyNote = await createDailyNote(momentDay);
+      // obsidian-daily-notes-interface bundles its own (older) obsidian.d.ts,
+      // so use instanceof to narrow against the project's TFile class.
+      const existing = getDailyNote(momentDay, getAllDailyNotes());
+      if (existing instanceof TFile) {
+        return existing;
       }
-      return dailyNote;
+      if (this.settings.createMissingDailyNotes) {
+        const created = await createDailyNote(momentDay);
+        if (created instanceof TFile) {
+          return created;
+        }
+      }
+      return null;
     } catch (error) {
       console.error('Failed to get/create daily note:', error);
       return null;

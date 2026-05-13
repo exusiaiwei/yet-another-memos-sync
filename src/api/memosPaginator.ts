@@ -49,14 +49,12 @@ export class SimpleMemosPaginator implements MemosPaginator {
     const filter = buildFilter(lastTimestamp, cutoffTimestamp);
 
     let pageToken = '';
-    let totalFetched = 0;
     let pages = 0;
     let exhausted = false;
 
     while (!exhausted) {
       const page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
       pages += 1;
-      totalFetched += page.memos.length;
 
       for (const memo of page.memos) {
         try {
@@ -100,8 +98,6 @@ export class SimpleMemosPaginator implements MemosPaginator {
         pageToken = page.nextPageToken;
       }
     }
-
-    console.log(`Fetched ${totalFetched} memos in ${pages} page(s); filter="${filter}"`);
 
     for (const [date, dayMemos] of Object.entries(dailyMemosByDay)) {
       await handler([date, dayMemos]);
