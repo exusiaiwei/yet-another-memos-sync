@@ -1,4 +1,5 @@
-import { App, TFile } from 'obsidian';
+import { App, TFile, moment } from 'obsidian';
+import type { Moment } from 'moment';
 import { getDailyNote, createDailyNote, getAllDailyNotes } from 'obsidian-daily-notes-interface';
 import { MemosAPIClient } from '../api/memosClient';
 import { SimpleMemosPaginator } from '../api/memosPaginator';
@@ -90,7 +91,7 @@ export class DailyNoteManager {
 
     await paginator.foreach(async ([dateStr, memos]) => {
       try {
-        const momentDay = window.moment(dateStr);
+        const momentDay = moment(dateStr);
         if (!momentDay.isValid()) {
           console.warn(`Invalid date: ${dateStr}`);
           return;
@@ -125,9 +126,9 @@ export class DailyNoteManager {
     return lastTime;
   }
 
-  private async getOrCreateDailyNote(momentDay: any): Promise<TFile | null> {
+  private async getOrCreateDailyNote(momentDay: Moment): Promise<TFile | null> {
     try {
-      let dailyNote = getDailyNote(momentDay, getAllDailyNotes());
+      let dailyNote: TFile | null = getDailyNote(momentDay, getAllDailyNotes());
       if (!dailyNote && this.settings.createMissingDailyNotes) {
         dailyNote = await createDailyNote(momentDay);
       }

@@ -1,7 +1,9 @@
+import { moment } from 'obsidian';
 import { Memo, MemosPaginator, APIClient } from '../types';
 import { transformMemoToMarkdown } from '../utils/memoTransformer';
 
 const PAGE_SIZE = 200;
+const MAX_PAGES = 200;
 
 /**
  * Build the CEL filter for incremental sync and time-window cap.
@@ -16,11 +18,11 @@ function extractTimestamp(memo: Memo): number | null {
   if (typeof memo.timestamp === 'number') return memo.timestamp;
   if (typeof memo.createdTs === 'number') return memo.createdTs;
   if (memo.createTime) {
-    const m = window.moment(memo.createTime);
+    const m = moment(memo.createTime);
     return m.isValid() ? m.unix() : null;
   }
   if (memo.createdAt) {
-    const m = window.moment(memo.createdAt);
+    const m = moment(memo.createdAt);
     return m.isValid() ? m.unix() : null;
   }
   return null;
@@ -41,7 +43,7 @@ export class SimpleMemosPaginator implements MemosPaginator {
     let latestTimestamp = '';
 
     const cutoffTimestamp = this.syncDaysLimit > 0
-      ? window.moment().subtract(this.syncDaysLimit, 'days').startOf('day').unix()
+      ? moment().subtract(this.syncDaysLimit, 'days').startOf('day').unix()
       : 0;
     const lastTimestamp = this.lastTime ? parseInt(this.lastTime) : 0;
     const filter = buildFilter(lastTimestamp, cutoffTimestamp);
@@ -49,8 +51,9 @@ export class SimpleMemosPaginator implements MemosPaginator {
     let pageToken = '';
     let totalFetched = 0;
     let pages = 0;
+    let exhausted = false;
 
-    while (true) {
+    while (!exhausted) {
       const page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
       pages += 1;
       totalFetched += page.memos.length;
@@ -88,13 +91,13 @@ export class SimpleMemosPaginator implements MemosPaginator {
         }
       }
 
-      if (!page.nextPageToken) break;
-      pageToken = page.nextPageToken;
-
-      // Hard safety cap to avoid unbounded loops on a misbehaving server.
-      if (pages > 200) {
+      if (!page.nextPageToken) {
+        exhausted = true;
+      } else if (pages > MAX_PAGES) {
         console.warn(`Stopping after ${pages} pages to avoid runaway pagination`);
-        break;
+        exhausted = true;
+      } else {
+        pageToken = page.nextPageToken;
       }
     }
 

@@ -1,5 +1,3 @@
-import { moment } from 'obsidian';
-
 // 支持的语言代码
 export type SupportedLanguage = 'en' | 'zh-cn' | 'zh-tw' | 'ja' | 'ko' | 'fr' | 'de' | 'es' | 'ru';
 
@@ -76,26 +74,20 @@ export interface Translations {
   FETCH_MEMOS_ERROR: string;
 }
 
-// 检测Obsidian语言设置
-export function detectLanguage(): SupportedLanguage {
-  // 获取Obsidian的语言设置
-  const obsidianLang = window.app?.vault?.getConfig?.('language') ||
-                      (window.moment && window.moment.locale ? window.moment.locale() : null) ||
-                      navigator.language ||
-                      'en';
+// 检测Obsidian语言设置：优先看 moment.locale()（Obsidian会在启动时同步设置）
+// 然后退回到浏览器 navigator.language。两者都是公开 API，避免直接读 vault 配置。
+export function detectLanguage(momentLocale: string | undefined): SupportedLanguage {
+  const candidate = momentLocale || (typeof navigator !== 'undefined' ? navigator.language : 'en');
+  const normalized = candidate.toLowerCase().replace('_', '-');
 
-  // 标准化语言代码
-  const normalizedLang = obsidianLang.toLowerCase().replace('_', '-');
+  if (normalized.startsWith('zh-cn') || normalized === 'zh-hans') return 'zh-cn';
+  if (normalized.startsWith('zh-tw') || normalized === 'zh-hant') return 'zh-tw';
+  if (normalized.startsWith('ja')) return 'ja';
+  if (normalized.startsWith('ko')) return 'ko';
+  if (normalized.startsWith('fr')) return 'fr';
+  if (normalized.startsWith('de')) return 'de';
+  if (normalized.startsWith('es')) return 'es';
+  if (normalized.startsWith('ru')) return 'ru';
 
-  // 匹配支持的语言
-  if (normalizedLang.startsWith('zh-cn') || normalizedLang === 'zh-hans') return 'zh-cn';
-  if (normalizedLang.startsWith('zh-tw') || normalizedLang === 'zh-hant') return 'zh-tw';
-  if (normalizedLang.startsWith('ja')) return 'ja';
-  if (normalizedLang.startsWith('ko')) return 'ko';
-  if (normalizedLang.startsWith('fr')) return 'fr';
-  if (normalizedLang.startsWith('de')) return 'de';
-  if (normalizedLang.startsWith('es')) return 'es';
-  if (normalizedLang.startsWith('ru')) return 'ru';
-
-  return 'en'; // 默认英语
+  return 'en';
 }

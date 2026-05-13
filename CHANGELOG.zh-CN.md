@@ -2,6 +2,24 @@
 
 所有项目的重要变更都会记录在此文件中。
 
+## [1.6.1] - 2026-05-13
+
+### 变更内容
+
+- 为通过 Obsidian 官方社区插件市场的自动审核做的修复：
+  - 把 `fetch` 换成 Obsidian 提供的 `requestUrl`，绕过 CORS 限制，顺带支持移动端。
+  - 设置面板的 HTML 标题（h2/h3/h4）改成 `new Setting(el).setName(...).setHeading()`，UI 风格统一。
+  - 删除账户时的浏览器 `confirm()` 弹窗改成 Obsidian 原生 `Modal`。
+  - 所有地方都改用 Obsidian 导出的 `moment`，不再用 `window.moment`。
+  - 移除直接 `localStorage` 访问。1.5.x → 1.6.0 的迁移代码已在 1.6.0 完成，1.6.1 不再需要。
+  - 用 Node 内置的 `node:module#builtinModules` 替换已弃用的 `builtin-modules` npm 包。
+  - Release workflow 增加 GitHub artifact attestation (`actions/attest-build-provenance@v2`)，给 `main.js`、`manifest.json`、`styles.css` 生成构建溯源证明。
+  - 清理若干未使用的 import 和变量。
+
+### 注意
+
+- 如果你是**直接从 1.5.x 跳到 1.6.1**（没装过 1.6.0），第一次同步会跑一次完整同步，因为旧的 `localStorage` 时间戳不再读取。不会丢数据，之后会自动恢复到增量同步。
+
 ## [1.6.0] - 2026-05-06
 
 ### 新增功能

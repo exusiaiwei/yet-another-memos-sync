@@ -1,3 +1,4 @@
+import { moment } from 'obsidian';
 import { detectLanguage, Translations, SupportedLanguage } from './index';
 import { enTranslations } from './en';
 import { zhCnTranslations } from './zh-cn';
@@ -21,7 +22,7 @@ export class TranslationManager {
   private translations: Translations;
 
   constructor(forceLanguage?: SupportedLanguage) {
-    this.currentLanguage = forceLanguage || detectLanguage();
+    this.currentLanguage = forceLanguage || detectLanguage(moment.locale());
     this.translations = translationsMap[this.currentLanguage];
   }
 

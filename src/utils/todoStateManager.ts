@@ -14,7 +14,7 @@ export function extractTodoItems(content: string): Map<string, boolean> {
     // Match todo items: - [ ] or - [x] or - [X]
     const todoMatch = line.match(/^(\s*-\s*)\[([ xX])\]\s*(.+)$/);
     if (todoMatch) {
-      const [, prefix, state, text] = todoMatch;
+      const [, , state, text] = todoMatch;
       const isCompleted = state.toLowerCase() === 'x';
       const normalizedText = text.trim();
       todoMap.set(normalizedText, isCompleted);
