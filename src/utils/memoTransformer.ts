@@ -1,3 +1,4 @@
+import { moment } from 'obsidian';
 import { Memo, Resource, DailyMemo } from '../types';
 import { getTimeEmoji } from './timeEmoji';
 
@@ -63,11 +64,10 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
 
   // Validate timestamp
   if (typeof timestamp !== 'number' || !isFinite(timestamp) || timestamp <= 0) {
-    throw new Error(`Invalid timestamp: ${timestamp}`);
+    throw new Error(`Invalid timestamp: ${String(timestamp)}`);
   }
 
-  // Use window.moment for Obsidian compatibility
-  const momentDate = window.moment(timestamp * 1000);
+  const momentDate = moment(timestamp * 1000);
   if (!momentDate.isValid()) {
     throw new Error(`Timestamp produces invalid date: ${timestamp}`);
   }
@@ -102,36 +102,32 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
     return {
       date,
       timestamp: String(timestamp),
-      content: finalContent
+      content: finalContent,
     };
-  }  // List Callout format - merge multiple lines with spaces for better visual effect
+  }
+
+  // List Callout format - merge multiple lines with spaces for better visual effect
   if (useListCalloutFormat) {
     // For List Callout format, merge all lines with spaces to maintain background color
     const mergedContent = content.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    const taskMatch = mergedContent.match(/(- \[.?\])(.*)/);
 
-    const [firstLine, ...otherLines] = [mergedContent]; // Since it's now a single line
-    const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
-
-    let targetFirstLine = "";
-
+    let targetFirstLine: string;
     if (taskMatch) {
       targetFirstLine = `${taskMatch[1]} ${emoji} ${time} ${taskMatch[2]}`;
     } else {
-      targetFirstLine = `- ${emoji} ${time} ${firstLine.replace(/^- /, "")}`;
+      targetFirstLine = `- ${emoji} ${time} ${mergedContent.replace(/^- /, "")}`;
     }
 
     targetFirstLine += ` #daily-record ^${timestamp}`;
 
-    // No additional lines needed since content is merged
     const targetResourceLines = resources?.length ?
       "\n" + resources.map(resource => `  - ${generateResourceLink(resource)}`).join("\n") : "";
-
-    const finalContent = targetFirstLine + targetResourceLines;
 
     return {
       date,
       timestamp: String(timestamp),
-      content: finalContent
+      content: targetFirstLine + targetResourceLines,
     };
   }
 
@@ -140,8 +136,7 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
   const taskMatch = firstLine.match(/(- \[.?\])(.*)/);
   const isCode = /```/.test(firstLine);
 
-  let targetFirstLine = "";
-
+  let targetFirstLine: string;
   if (taskMatch) {
     targetFirstLine = `${taskMatch[1]} ${emoji} ${time} ${taskMatch[2]}`;
   } else if (isCode) {
@@ -153,21 +148,19 @@ export function transformMemoToMarkdown(memo: Memo, useCalloutFormat = false, us
 
   targetFirstLine += ` #daily-record ^${timestamp}`;
 
-  // Process multi-line content properly
+  // Process multi-line content properly (use 2 spaces for list indentation)
   const targetOtherLines = otherLines?.length ?
     "\n" + otherLines
       .filter(line => line.trim())
-      .map(line => `  ${line}`) // Use two spaces for proper indentation
+      .map(line => `  ${line}`)
       .join("\n") : "";
 
   const targetResourceLines = resources?.length ?
     "\n" + resources.map(resource => `  - ${generateResourceLink(resource)}`).join("\n") : "";
 
-  const finalContent = targetFirstLine + targetOtherLines + targetResourceLines;
-
   return {
     date,
     timestamp: String(timestamp),
-    content: finalContent
+    content: targetFirstLine + targetOtherLines + targetResourceLines,
   };
 }

@@ -28,7 +28,7 @@ export class DailyNoteModifier {
     originFileContent: string,
     today: string,
     fetchedRecordList: Record<string, string>,
-    isIncrementalSync: boolean = false
+    isIncrementalSync = false,
   ): string | undefined {
     const header = this.dailyMemosHeader;
     const reg = generateHeaderRegExp(header);
@@ -62,7 +62,7 @@ export class DailyNoteModifier {
         let memoEnd = memoEndIndex !== -1 ? memoEndIndex : fullMemoEndIndex;
         if (memoEnd === -1) memoEnd = localRecordContent.length;
 
-        let memoStart = memoStartIndex !== -1 ? memoStartIndex + 1 : 0;
+        const memoStart = memoStartIndex !== -1 ? memoStartIndex + 1 : 0;
         const memoContent = localRecordContent.slice(memoStart, memoEnd).trim();
 
         if (memoContent) {
@@ -78,8 +78,8 @@ export class DailyNoteModifier {
 
     // Find additions and updates
     for (const [timestamp, content] of Object.entries(fetchedRecordList)) {
-      if (existingMemos.has(timestamp)) {
-        const existingContent = existingMemos.get(timestamp)!;
+      const existingContent = existingMemos.get(timestamp);
+      if (existingContent !== undefined) {
         const remoteContent = content;
 
         // Check if contents are the same except for todo states

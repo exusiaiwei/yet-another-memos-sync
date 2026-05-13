@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-05-13
+
+### Changed
+
+- Fixes to clear the Obsidian community plugin store automated review:
+  - Replaced `fetch` with Obsidian's `requestUrl`, so network requests no longer hit CORS limits and the plugin now works on mobile as well as desktop.
+  - Replaced raw HTML headings in the settings tab with `new Setting(el).setName(...).setHeading()` for consistent UI styling.
+  - Replaced the browser `confirm()` dialog used for profile deletion with a native Obsidian `Modal`.
+  - Use Obsidian's bundled `moment` export everywhere instead of reading `window.moment`.
+  - Dropped raw `localStorage` access; the legacy v1.5.x sync-state migration via `localStorage` was already completed in 1.6.0, so it has been removed.
+  - Replaced the deprecated `builtin-modules` npm package with Node's built-in `node:module#builtinModules`.
+  - Release workflow now generates a GitHub artifact attestation (`actions/attest-build-provenance@v2`) for `main.js`, `manifest.json`, and `styles.css`.
+  - Removed several unused imports and variables (`PersistedData`, `moment` re-import, `otherLines`, `prefix`).
+
+### Note
+
+- Users upgrading **directly** from 1.5.x to 1.6.1 (skipping 1.6.0) will see one extra full sync after the upgrade because the legacy `localStorage` sync timestamp is no longer read. No data is lost; subsequent syncs revert to incremental.
+
 ## [1.6.0] - 2026-05-06
 
 ### Added
