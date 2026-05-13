@@ -70,4 +70,8 @@ export const zhCnTranslations: Translations = {
   // Error messages
   NETWORK_ERROR: '网络错误: 无法连接到',
   FETCH_MEMOS_ERROR: '无法获取备忘录',
+
+  // Generic buttons
+  CONFIRM_OK: '确定',
+  CONFIRM_CANCEL: '取消',
 };

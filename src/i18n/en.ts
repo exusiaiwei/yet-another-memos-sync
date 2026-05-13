@@ -70,4 +70,8 @@ export const enTranslations: Translations = {
   // Error messages
   NETWORK_ERROR: 'Network error: Unable to connect to',
   FETCH_MEMOS_ERROR: 'Unable to fetch memos',
+
+  // Generic buttons
+  CONFIRM_OK: 'OK',
+  CONFIRM_CANCEL: 'Cancel',
 };

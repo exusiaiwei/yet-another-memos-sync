@@ -47,8 +47,12 @@ export class MemosAPIClient implements APIClient {
 
     if (response.status < 200 || response.status >= 300) {
       const body = response.text || '';
+      // Always log the full body so debugging is possible; only surface a short
+      // summary in the thrown Error since it ends up in a user-facing Notice.
       console.error(`API request failed: ${response.status}`, body);
-      throw new Error(`${t.t('FETCH_MEMOS_ERROR')}: HTTP ${response.status} ${body}`);
+      const summary = body.replace(/\s+/g, ' ').trim().slice(0, 200);
+      const detail = summary ? ` ${summary}${body.length > 200 ? '…' : ''}` : '';
+      throw new Error(`${t.t('FETCH_MEMOS_ERROR')}: HTTP ${response.status}${detail}`);
     }
 
     const data = response.json as ListMemosResponse;

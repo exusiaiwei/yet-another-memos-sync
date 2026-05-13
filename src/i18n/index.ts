@@ -72,6 +72,10 @@ export interface Translations {
   // 错误消息
   NETWORK_ERROR: string;
   FETCH_MEMOS_ERROR: string;
+
+  // 通用按钮
+  CONFIRM_OK: string;
+  CONFIRM_CANCEL: string;
 }
 
 // 检测Obsidian语言设置：优先看 moment.locale()（Obsidian会在启动时同步设置）

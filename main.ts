@@ -107,10 +107,10 @@ class ConfirmModal extends Modal {
 		this.contentEl.createEl('p', { text: this.message });
 		const buttons = this.contentEl.createDiv({ cls: 'modal-button-container' });
 		new ButtonComponent(buttons)
-			.setButtonText('Cancel')
+			.setButtonText(t.t('CONFIRM_CANCEL'))
 			.onClick(() => this.close());
 		new ButtonComponent(buttons)
-			.setButtonText('OK')
+			.setButtonText(t.t('CONFIRM_OK'))
 			.setWarning()
 			.onClick(() => {
 				this.close();
@@ -126,6 +126,7 @@ class ConfirmModal extends Modal {
 export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncStateStore {
 	settings: MemosSettings;
 	private dailyNoteManager: DailyNoteManager;
+	private periodicSyncIntervalId: number | null = null;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
@@ -210,6 +211,12 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 	}
 
 	private schedulePeriodicSync(): void {
+		// Always clear any previously scheduled interval before deciding whether to schedule
+		// a new one — otherwise saveSettings would stack intervals every time the user edits.
+		if (this.periodicSyncIntervalId !== null) {
+			window.clearInterval(this.periodicSyncIntervalId);
+			this.periodicSyncIntervalId = null;
+		}
 		if (this.settings.periodicSyncInterval > 0) {
 			// User-disclosed opt-in: the "Periodic Sync Interval" setting defaults to 0 (off).
 			// When enabled, sync runs every N minutes against the user-configured Memos servers only.
@@ -217,6 +224,7 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 				() => { void this.runSync('smart'); },
 				this.settings.periodicSyncInterval * 60 * 1000,
 			);
+			this.periodicSyncIntervalId = id;
 			this.registerInterval(id);
 		}
 	}
