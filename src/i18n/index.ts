@@ -27,6 +27,11 @@ export interface Translations {
   PROFILE_NAME_LABEL: string;
   PROFILE_NAME_DESC: string;
   PROFILE_ENABLED_LABEL: string;
+  PROFILE_DISABLED_LABEL: string;
+  PROFILE_NO_URL: string;
+  PROFILE_ADD_TITLE: string;
+  PROFILE_EDIT_TITLE: string;
+  PROFILE_SAVE: string;
   ADD_PROFILE: string;
   REMOVE_PROFILE: string;
   REMOVE_PROFILE_CONFIRM: string;
@@ -43,6 +48,9 @@ export interface Translations {
   USE_CALLOUT_FORMAT_DESC: string;
   USE_LIST_CALLOUT_FORMAT_NAME: string;
   USE_LIST_CALLOUT_FORMAT_DESC: string;
+  LIST_CALLOUT_HINT: string;
+  SKIP_IMAGES_NAME: string;
+  SKIP_IMAGES_DESC: string;
   SYNC_DAYS_LIMIT_NAME: string;
   SYNC_DAYS_LIMIT_DESC: string;
 

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-08-09
+
+### Changed
+
+- **Requires Obsidian 1.13.0+**: `minAppVersion` raised to 1.13.0 to adopt the declarative settings API (`getSettingDefinitions()`). Settings now appear in Obsidian's global settings search.
+- **Settings UI migrated to the declarative API**: the settings tab is now defined declaratively (requires 1.13.0). Profile cards are replaced by a compact list — click a profile to edit it in a modal, use the delete button or Delete key to remove one, and the "+" button to add a new account.
+- **Destructive button styling**: profile-removal confirmation and delete buttons now use `setDestructive()` instead of the deprecated `setWarning()`.
+
+### Fixed
+
+- **Community plugin scan findings**: removed the forbidden `eslint-disable` for the sentence-case rule (copy moved into translations), replaced `createEl('div')` with `createDiv`, and upgraded the `obsidian` type definitions to 1.13.1 so the `moment` helper is fully typed (clearing the `no-unsafe-*` warnings).
+- **Hardcoded strings**: the "Skip Images" setting and the List Callouts hint were hardcoded in Chinese; both are now localized.
+
 ## [1.6.2] - 2026-08-08
 
 ### Fixed

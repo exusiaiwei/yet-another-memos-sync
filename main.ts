@@ -1,4 +1,4 @@
-import { Plugin, Setting, PluginSettingTab, Notice, App, Modal, ButtonComponent } from 'obsidian';
+import { Plugin, Setting, PluginSettingTab, Notice, App, Modal, ButtonComponent, SettingDefinitionItem } from 'obsidian';
 import { DailyNoteManager, SyncStateStore, SyncMode } from './src/services/dailyNoteManager';
 import { MemosProfile, MemosSettings } from './src/types';
 import { t } from './src/i18n/translationManager';
@@ -111,7 +111,7 @@ class ConfirmModal extends Modal {
 			.onClick(() => this.close());
 		new ButtonComponent(buttons)
 			.setButtonText(t.t('CONFIRM_OK'))
-			.setWarning()
+			.setDestructive()
 			.onClick(() => {
 				this.close();
 				this.onConfirm();
@@ -132,6 +132,93 @@ class ErrorLogModal extends Modal {
 		this.titleEl.setText(t.t('VIEW_ERROR_LOG'));
 		const pre = this.contentEl.createEl('pre', { cls: 'yams-error-log' });
 		pre.setText(this.content);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
+}
+
+class ProfileEditModal extends Modal {
+	private draft: MemosProfile;
+
+	constructor(
+		app: App,
+		private plugin: YetAnotherMemosSyncPlugin,
+		private profile: MemosProfile | null,
+		private onSaved: () => void,
+	) {
+		super(app);
+		this.draft = profile ? { ...profile } : defaultProfile();
+	}
+
+	onOpen(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		this.titleEl.setText(this.profile ? t.t('PROFILE_EDIT_TITLE') : t.t('PROFILE_ADD_TITLE'));
+
+		new Setting(contentEl)
+			.setName(t.t('PROFILE_NAME_LABEL'))
+			.setDesc(t.t('PROFILE_NAME_DESC'))
+			.addText(text => text
+				.setValue(this.draft.name)
+				.onChange(value => { this.draft.name = value; }));
+
+		new Setting(contentEl)
+			.setName(t.t('PROFILE_ENABLED_LABEL'))
+			.addToggle(toggle => toggle
+				.setValue(this.draft.enabled)
+				.onChange(value => { this.draft.enabled = value; }));
+
+		new Setting(contentEl)
+			.setName(t.t('API_URL_NAME'))
+			.setDesc(t.t('API_URL_DESC'))
+			.addText(text => text
+				.setPlaceholder('https://memos.example.com')
+				.setValue(this.draft.apiUrl)
+				.onChange(value => { this.draft.apiUrl = value; }));
+
+		new Setting(contentEl)
+			.setName(t.t('API_TOKEN_NAME'))
+			.setDesc(t.t('API_TOKEN_DESC'))
+			.addText(text => text
+				.setPlaceholder('Enter your API token')
+				.setValue(this.draft.apiToken)
+				.onChange(value => { this.draft.apiToken = value; }));
+
+		new Setting(contentEl)
+			.setName(t.t('DAILY_HEADER_NAME'))
+			.setDesc(t.t('DAILY_HEADER_DESC'))
+			.addText(text => text
+				.setPlaceholder('## 📓 Memos')
+				.setValue(this.draft.dailyMemoHeader)
+				.onChange(value => { this.draft.dailyMemoHeader = value; }));
+
+		new Setting(contentEl)
+			.setName(t.t('SYNC_DAYS_LIMIT_NAME'))
+			.setDesc(t.t('SYNC_DAYS_LIMIT_DESC'))
+			.addText(text => text
+				.setPlaceholder('30')
+				.setValue(String(this.draft.syncDaysLimit))
+				.onChange(value => { this.draft.syncDaysLimit = Number(value) || 0; }));
+
+		const buttons = contentEl.createDiv({ cls: 'modal-button-container' });
+		new ButtonComponent(buttons)
+			.setButtonText(t.t('CONFIRM_CANCEL'))
+			.onClick(() => this.close());
+		new ButtonComponent(buttons)
+			.setButtonText(t.t('PROFILE_SAVE'))
+			.setCta()
+			.onClick(async () => {
+				if (this.profile) {
+					Object.assign(this.profile, this.draft);
+				} else {
+					Object.assign(this.plugin.addProfile(), this.draft);
+				}
+				await this.plugin.saveSettings();
+				this.close();
+				this.onSaved();
+			});
 	}
 
 	onClose(): void {
@@ -306,235 +393,166 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		new Setting(containerEl).setName(t.t('SETTINGS_TITLE')).setHeading();
-
-		this.renderProfilesSection(containerEl);
-		this.renderSyncFormatSection(containerEl);
-		this.renderAutoSyncSection(containerEl);
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		const settings = this.plugin.settings;
+		return [
+			{
+				name: '',
+				render: (setting) => {
+					setting.descEl.setText(t.t('PROFILES_DESC'));
+				},
+			},
+			{
+				type: 'list',
+				heading: t.t('PROFILES_TITLE'),
+				emptyState: t.t('NO_PROFILES_HINT'),
+				addItem: {
+					name: t.t('ADD_PROFILE'),
+					action: () => this.openProfileModal(null),
+				},
+				onDelete: (index) => this.confirmRemoveProfile(index),
+				items: settings.profiles.map(profile => ({
+					name: profile.name || 'Unnamed',
+					desc: `${profile.enabled ? t.t('PROFILE_ENABLED_LABEL') : t.t('PROFILE_DISABLED_LABEL')} · ${profile.apiUrl || t.t('PROFILE_NO_URL')}`,
+					searchable: false,
+					action: () => this.openProfileModal(profile),
+				})),
+			},
+			{
+				type: 'group',
+				heading: t.t('SYNC_CONFIG_TITLE'),
+				items: [
+					{
+						name: t.t('ATTACHMENT_FOLDER_NAME'),
+						desc: t.t('ATTACHMENT_FOLDER_DESC'),
+						control: { type: 'text', key: 'attachmentFolderPath', placeholder: 'Attachments' },
+					},
+					{
+						name: t.t('CREATE_MISSING_NOTES_NAME'),
+						desc: t.t('CREATE_MISSING_NOTES_DESC'),
+						control: { type: 'toggle', key: 'createMissingDailyNotes' },
+					},
+					{
+						name: t.t('USE_CALLOUT_FORMAT_NAME'),
+						desc: t.t('USE_CALLOUT_FORMAT_DESC'),
+						control: { type: 'toggle', key: 'useCalloutFormat' },
+					},
+					{
+						name: t.t('USE_LIST_CALLOUT_FORMAT_NAME'),
+						desc: t.t('USE_LIST_CALLOUT_FORMAT_DESC'),
+						control: { type: 'toggle', key: 'useListCalloutFormat' },
+					},
+					{
+						name: '',
+						render: (setting) => {
+							setting.descEl.setText(t.t('LIST_CALLOUT_HINT'));
+							setting.descEl.addClass('yet-another-memos-sync-callout-note');
+						},
+						visible: () => settings.useListCalloutFormat,
+					},
+					{
+						name: t.t('SKIP_IMAGES_NAME'),
+						desc: t.t('SKIP_IMAGES_DESC'),
+						control: { type: 'toggle', key: 'skipImages' },
+					},
+				],
+			},
+			{
+				type: 'group',
+				heading: t.t('AUTO_SYNC_TITLE'),
+				items: [
+					{
+						name: t.t('AUTO_SYNC_STARTUP_NAME'),
+						desc: t.t('AUTO_SYNC_STARTUP_DESC'),
+						control: { type: 'toggle', key: 'enableAutoSyncOnStartup' },
+					},
+					{
+						name: t.t('STARTUP_DELAY_NAME'),
+						desc: t.t('STARTUP_DELAY_DESC'),
+						control: { type: 'number', key: 'startupSyncDelay' },
+					},
+					{
+						name: t.t('SKIP_IF_SYNCED_NAME'),
+						desc: t.t('SKIP_IF_SYNCED_DESC'),
+						control: { type: 'toggle', key: 'skipIfSyncedToday' },
+					},
+					{
+						name: t.t('PERIODIC_SYNC_NAME'),
+						desc: t.t('PERIODIC_SYNC_DESC'),
+						control: { type: 'number', key: 'periodicSyncInterval' },
+					},
+				],
+			},
+		];
 	}
 
-	private renderProfilesSection(containerEl: HTMLElement): void {
-		new Setting(containerEl)
-			.setName(t.t('PROFILES_TITLE'))
-			.setDesc(t.t('PROFILES_DESC'))
-			.setHeading();
-
-		const profiles = this.plugin.settings.profiles;
-		if (profiles.length === 0) {
-			containerEl.createEl('p', {
-				text: t.t('NO_PROFILES_HINT'),
-				cls: 'setting-item-description',
-			});
+	getControlValue(key: string): unknown {
+		const settings = this.plugin.settings;
+		switch (key) {
+			case 'attachmentFolderPath': return settings.attachmentFolderPath;
+			case 'createMissingDailyNotes': return settings.createMissingDailyNotes;
+			case 'useCalloutFormat': return settings.useCalloutFormat;
+			case 'useListCalloutFormat': return settings.useListCalloutFormat;
+			case 'skipImages': return settings.skipImages;
+			case 'enableAutoSyncOnStartup': return settings.enableAutoSyncOnStartup;
+			case 'startupSyncDelay': return settings.startupSyncDelay;
+			case 'skipIfSyncedToday': return settings.skipIfSyncedToday;
+			case 'periodicSyncInterval': return settings.periodicSyncInterval;
+			default: return undefined;
 		}
+	}
 
-		for (const profile of profiles) {
-			this.renderProfile(containerEl, profile);
+	setControlValue(key: string, value: unknown): void | Promise<void> {
+		const settings = this.plugin.settings;
+		switch (key) {
+			case 'attachmentFolderPath':
+				settings.attachmentFolderPath = String(value);
+				break;
+			case 'createMissingDailyNotes':
+				settings.createMissingDailyNotes = value === true;
+				break;
+			case 'useCalloutFormat':
+				settings.useCalloutFormat = value === true;
+				if (value === true) settings.useListCalloutFormat = false;
+				break;
+			case 'useListCalloutFormat':
+				settings.useListCalloutFormat = value === true;
+				if (value === true) settings.useCalloutFormat = false;
+				break;
+			case 'skipImages':
+				settings.skipImages = value === true;
+				break;
+			case 'enableAutoSyncOnStartup':
+				settings.enableAutoSyncOnStartup = value === true;
+				break;
+			case 'startupSyncDelay':
+				settings.startupSyncDelay = Number(value) || 3;
+				break;
+			case 'skipIfSyncedToday':
+				settings.skipIfSyncedToday = value === true;
+				break;
+			case 'periodicSyncInterval':
+				settings.periodicSyncInterval = Number(value) || 0;
+				break;
+			default:
+				return;
 		}
-
-		new Setting(containerEl).addButton(btn => btn
-			.setButtonText(t.t('ADD_PROFILE'))
-			.setCta()
-			.onClick(async () => {
-				this.plugin.addProfile();
-				await this.plugin.saveSettings();
-				this.display();
-			}));
+		const needsRefresh = key === 'useCalloutFormat' || key === 'useListCalloutFormat';
+		return this.plugin.saveSettings().then(() => {
+			if (needsRefresh) this.update();
+		});
 	}
 
-	private renderProfile(containerEl: HTMLElement, profile: MemosProfile): void {
-		const card = containerEl.createDiv({ cls: 'yams-profile-card' });
-		new Setting(card).setName(profile.name || 'Unnamed').setHeading();
-
-		new Setting(card)
-			.setName(t.t('PROFILE_NAME_LABEL'))
-			.setDesc(t.t('PROFILE_NAME_DESC'))
-			.addText(text => text
-				.setValue(profile.name)
-				.onChange(async (value) => {
-					profile.name = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card)
-			.setName(t.t('PROFILE_ENABLED_LABEL'))
-			.addToggle(toggle => toggle
-				.setValue(profile.enabled)
-				.onChange(async (value) => {
-					profile.enabled = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card)
-			.setName(t.t('API_URL_NAME'))
-			.setDesc(t.t('API_URL_DESC'))
-			.addText(text => text
-				.setPlaceholder('https://memos.example.com')
-				.setValue(profile.apiUrl)
-				.onChange(async (value) => {
-					profile.apiUrl = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card)
-			.setName(t.t('API_TOKEN_NAME'))
-			.setDesc(t.t('API_TOKEN_DESC'))
-			.addText(text => text
-				.setPlaceholder('Enter your API token')
-				.setValue(profile.apiToken)
-				.onChange(async (value) => {
-					profile.apiToken = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card)
-			.setName(t.t('DAILY_HEADER_NAME'))
-			.setDesc(t.t('DAILY_HEADER_DESC'))
-			.addText(text => text
-				.setPlaceholder('## 📓 Memos')
-				.setValue(profile.dailyMemoHeader)
-				.onChange(async (value) => {
-					profile.dailyMemoHeader = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card)
-			.setName(t.t('SYNC_DAYS_LIMIT_NAME'))
-			.setDesc(t.t('SYNC_DAYS_LIMIT_DESC'))
-			.addText(text => text
-				.setPlaceholder('30')
-				.setValue(String(profile.syncDaysLimit))
-				.onChange(async (value) => {
-					profile.syncDaysLimit = Number(value) || 0;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(card).addButton(btn => btn
-			.setButtonText(t.t('REMOVE_PROFILE'))
-			.setWarning()
-			.onClick(() => {
-				new ConfirmModal(this.app, t.t('REMOVE_PROFILE_CONFIRM'), () => {
-					this.plugin.removeProfile(profile.id);
-					void this.plugin.saveSettings().then(() => this.display());
-				}).open();
-			}));
+	private openProfileModal(profile: MemosProfile | null): void {
+		new ProfileEditModal(this.app, this.plugin, profile, () => this.update()).open();
 	}
 
-	private renderSyncFormatSection(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName(t.t('SYNC_CONFIG_TITLE')).setHeading();
-
-		new Setting(containerEl)
-			.setName(t.t('ATTACHMENT_FOLDER_NAME'))
-			.setDesc(t.t('ATTACHMENT_FOLDER_DESC'))
-			.addText(text => text
-				.setPlaceholder('Attachments')
-				.setValue(this.plugin.settings.attachmentFolderPath)
-				.onChange(async (value) => {
-					this.plugin.settings.attachmentFolderPath = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('CREATE_MISSING_NOTES_NAME'))
-			.setDesc(t.t('CREATE_MISSING_NOTES_DESC'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.createMissingDailyNotes)
-				.onChange(async (value) => {
-					this.plugin.settings.createMissingDailyNotes = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('USE_CALLOUT_FORMAT_NAME'))
-			.setDesc(t.t('USE_CALLOUT_FORMAT_DESC'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.useCalloutFormat)
-				.onChange(async (value) => {
-					this.plugin.settings.useCalloutFormat = value;
-					if (value) this.plugin.settings.useListCalloutFormat = false;
-					await this.plugin.saveSettings();
-					this.display();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('USE_LIST_CALLOUT_FORMAT_NAME'))
-			.setDesc(t.t('USE_LIST_CALLOUT_FORMAT_DESC'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.useListCalloutFormat)
-				.onChange(async (value) => {
-					this.plugin.settings.useListCalloutFormat = value;
-					if (value) this.plugin.settings.useCalloutFormat = false;
-					await this.plugin.saveSettings();
-					this.display();
-				}));
-
-		if (this.plugin.settings.useListCalloutFormat) {
-			const hint = containerEl.createEl('div', {
-				cls: 'setting-item-description yet-another-memos-sync-callout-note',
-			});
-			hint.appendText('💡 为获得最佳视觉效果，建议安装 ');
-			// eslint-disable-next-line obsidianmd/ui/sentence-case -- proper plugin name
-			hint.createEl('strong', { text: 'List Callouts' });
-			hint.appendText(' 插件，它可以根据 emoji 自动为列表添加颜色样式。');
-		}
-
-		new Setting(containerEl)
-			.setName('跳过图片')
-			.setDesc('同步时不包含图片资源，避免图片污染 Obsidian 库')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.skipImages)
-				.onChange(async (value) => {
-					this.plugin.settings.skipImages = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-
-	private renderAutoSyncSection(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName(t.t('AUTO_SYNC_TITLE')).setHeading();
-
-		new Setting(containerEl)
-			.setName(t.t('AUTO_SYNC_STARTUP_NAME'))
-			.setDesc(t.t('AUTO_SYNC_STARTUP_DESC'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableAutoSyncOnStartup)
-				.onChange(async (value) => {
-					this.plugin.settings.enableAutoSyncOnStartup = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('STARTUP_DELAY_NAME'))
-			.setDesc(t.t('STARTUP_DELAY_DESC'))
-			.addText(text => text
-				.setPlaceholder('3')
-				.setValue(String(this.plugin.settings.startupSyncDelay))
-				.onChange(async (value) => {
-					this.plugin.settings.startupSyncDelay = Number(value) || 3;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('SKIP_IF_SYNCED_NAME'))
-			.setDesc(t.t('SKIP_IF_SYNCED_DESC'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.skipIfSyncedToday)
-				.onChange(async (value) => {
-					this.plugin.settings.skipIfSyncedToday = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName(t.t('PERIODIC_SYNC_NAME'))
-			.setDesc(t.t('PERIODIC_SYNC_DESC'))
-			.addText(text => text
-				.setPlaceholder('0')
-				.setValue(String(this.plugin.settings.periodicSyncInterval))
-				.onChange(async (value) => {
-					this.plugin.settings.periodicSyncInterval = Number(value) || 0;
-					await this.plugin.saveSettings();
-				}));
+	private confirmRemoveProfile(index: number): void {
+		const profile = this.plugin.settings.profiles[index];
+		if (!profile) return;
+		new ConfirmModal(this.app, t.t('REMOVE_PROFILE_CONFIRM'), () => {
+			this.plugin.removeProfile(profile.id);
+			void this.plugin.saveSettings().then(() => this.update());
+		}).open();
 	}
 }
