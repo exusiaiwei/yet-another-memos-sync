@@ -1,5 +1,5 @@
 import { moment } from 'obsidian';
-import { Memo, MemosPaginator, APIClient } from '../types';
+import { Memo, MemosPaginator, APIClient, ListMemosPage } from '../types';
 import { transformMemoToMarkdown } from '../utils/memoTransformer';
 
 const PAGE_SIZE = 200;
@@ -46,14 +46,32 @@ export class SimpleMemosPaginator implements MemosPaginator {
       ? moment().subtract(this.syncDaysLimit, 'days').startOf('day').unix()
       : 0;
     const lastTimestamp = this.lastTime ? parseInt(this.lastTime) : 0;
-    const filter = buildFilter(lastTimestamp, cutoffTimestamp);
+    let filter = buildFilter(lastTimestamp, cutoffTimestamp);
 
     let pageToken = '';
     let pages = 0;
     let exhausted = false;
+    let filterDropped = false;
 
     while (!exhausted) {
-      const page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
+      let page: ListMemosPage;
+      try {
+        page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
+      } catch (error) {
+        // memos v0.30.0 (2026-07) changed CEL time-filter semantics: `created_ts`
+        // is now a CEL timestamp and comparing it against a bare epoch int fails
+        // with HTTP 400 ("no matching overload for '_>_' applied to '(timestamp, int)'").
+        // Fall back to fetching without a server-side filter; the local time-window
+        // checks below still enforce syncDaysLimit / lastTime, so this stays correct
+        // on both old and new memos versions.
+        if (!filterDropped && filter && error instanceof Error && /HTTP 400/.test(error.message)) {
+          filterDropped = true;
+          filter = '';
+          console.warn('Memos rejected the CEL filter (HTTP 400); retrying without a server-side filter.');
+          continue;
+        }
+        throw error;
+      }
       pages += 1;
 
       for (const memo of page.memos) {

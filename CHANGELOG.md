@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2] - 2026-08-08
+
+### Fixed
+
+- **Sync completely broken on memos v0.30+**: memos v0.30 changed CEL time-filter semantics — `created_ts` is now a CEL `timestamp` and comparing it against a bare epoch integer fails with HTTP 400 (`no matching overload for '_>_' applied to '(timestamp, int)'`). The plugin now detects this and automatically retries without the server-side filter (local time-window filtering still applies), restoring sync on both new and old memos servers.
+- **Unhelpful, flash-by error notices**: Sync failures flashed in the corner and were easy to miss. Failures now stay on screen for 10 seconds, are written to a persistent log file (`.obsidian/plugins/yet-another-memos-sync/yams-sync-error.log`), and are viewable via a new "View sync error log" command. Uncaught errors and unhandled promise rejections are captured too.
+- **Crash on unexpected API response**: A non-JSON or malformed `/api/v1/memos` response could throw "Cannot read properties of undefined". It now logs the response body and returns an empty page instead of crashing.
+- **Profile attribution in errors**: Sync errors now include which profile failed, making multi-account setups easier to debug.
+
 ## [1.6.1] - 2026-05-13
 
 ### Changed

@@ -70,6 +70,8 @@ export const enTranslations: Translations = {
   // Error messages
   NETWORK_ERROR: 'Network error: Unable to connect to',
   FETCH_MEMOS_ERROR: 'Unable to fetch memos',
+  VIEW_ERROR_LOG: 'View sync error log',
+  VIEW_ERROR_LOG_EMPTY: 'No errors logged yet.',
 
   // Generic buttons
   CONFIRM_OK: 'OK',

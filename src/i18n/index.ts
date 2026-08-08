@@ -72,6 +72,8 @@ export interface Translations {
   // 错误消息
   NETWORK_ERROR: string;
   FETCH_MEMOS_ERROR: string;
+  VIEW_ERROR_LOG: string;
+  VIEW_ERROR_LOG_EMPTY: string;
 
   // 通用按钮
   CONFIRM_OK: string;

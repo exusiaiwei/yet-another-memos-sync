@@ -123,6 +123,22 @@ class ConfirmModal extends Modal {
 	}
 }
 
+class ErrorLogModal extends Modal {
+	constructor(app: App, private content: string) {
+		super(app);
+	}
+
+	onOpen(): void {
+		this.titleEl.setText(t.t('VIEW_ERROR_LOG'));
+		const pre = this.contentEl.createEl('pre', { cls: 'yams-error-log' });
+		pre.setText(this.content);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
+}
+
 export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncStateStore {
 	settings: MemosSettings;
 	private dailyNoteManager: DailyNoteManager;
@@ -154,6 +170,27 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 		});
 
 		this.addSettingTab(new YetAnotherMemosSyncSettingTab(this.app, this));
+
+		this.registerDomEvent(window, 'error', (event: ErrorEvent) => {
+			const detail = event.error instanceof Error ? event.error.stack || event.error.message : event.message;
+			void this.appendErrorLog(`\n[${new Date().toISOString()}] window.onerror\n${detail}`);
+		});
+		this.registerDomEvent(window, 'unhandledrejection', (event: PromiseRejectionEvent) => {
+			const reason = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+			void this.appendErrorLog(`\n[${new Date().toISOString()}] unhandledrejection\n${reason.stack || reason.message}`);
+		});
+
+		this.addCommand({
+			id: 'view-sync-error-log',
+			name: t.t('VIEW_ERROR_LOG'),
+			callback: () => {
+				void (async () => {
+					const path = this.errorLogPath();
+					const content = await this.app.vault.adapter.read(path).catch(() => t.t('VIEW_ERROR_LOG_EMPTY'));
+					new ErrorLogModal(this.app, content).open();
+				})();
+			},
+		});
 
 		if (this.settings.enableAutoSyncOnStartup) {
 			this.scheduleStartupSync();
@@ -187,15 +224,34 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 		await this.saveData(this.settings);
 	}
 
-	private async runSync(mode: SyncMode): Promise<void> {
+	private errorLogPath(): string {
+		const pluginId = (this.manifest && this.manifest.id) || 'yet-another-memos-sync';
+		return `${this.app.vault.configDir}/plugins/${pluginId}/yams-sync-error.log`;
+	}
+
+	private async appendErrorLog(entry: string): Promise<void> {
 		try {
-			new Notice(mode === 'force' ? t.t('FORCE_SYNC_STARTING') : t.t('SYNC_STARTING'));
-			await this.dailyNoteManager.syncAll(mode);
-			new Notice(mode === 'force' ? t.t('FORCE_SYNC_SUCCESS') : t.t('SYNC_SUCCESS'));
+			const path = this.errorLogPath();
+			const adapter = this.app.vault.adapter;
+			const existing = await adapter.read(path).catch(() => '');
+			await adapter.write(path, existing + entry);
 		} catch (error) {
-			console.error(`Sync (${mode}) failed:`, error);
+			console.error('Failed to write YAMS error log:', error);
+		}
+	}
+
+	private async runSync(mode: SyncMode): Promise<void> {
+		const force = mode === 'force';
+		try {
+			new Notice(force ? t.t('FORCE_SYNC_STARTING') : t.t('SYNC_STARTING'));
+			await this.dailyNoteManager.syncAll(mode);
+			new Notice(force ? t.t('FORCE_SYNC_SUCCESS') : t.t('SYNC_SUCCESS'));
+		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			new Notice(`${mode === 'force' ? t.t('FORCE_SYNC_FAILED') : t.t('SYNC_FAILED')}: ${message}`);
+			const stack = error instanceof Error && error.stack ? error.stack : '';
+			console.error(`Sync (${mode}) failed:`, error);
+			void this.appendErrorLog(`\n[${new Date().toISOString()}] Sync mode=${mode}\n${message}\n${stack}`);
+			new Notice(`${force ? t.t('FORCE_SYNC_FAILED') : t.t('SYNC_FAILED')}: ${message}`, 10000);
 		}
 	}
 

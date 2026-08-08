@@ -55,9 +55,13 @@ export class MemosAPIClient implements APIClient {
       throw new Error(`${t.t('FETCH_MEMOS_ERROR')}: HTTP ${response.status}${detail}`);
     }
 
-    const data = response.json as ListMemosResponse;
+    const data = response.json as ListMemosResponse | null;
+    if (!data || !Array.isArray(data.memos)) {
+      console.warn('Unexpected /api/v1/memos response shape:', (response.text || '').slice(0, 500));
+      return { memos: [], nextPageToken: '' };
+    }
     return {
-      memos: data.memos ?? [],
+      memos: data.memos,
       nextPageToken: data.nextPageToken ?? '',
     };
   }

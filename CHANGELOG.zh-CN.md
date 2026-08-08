@@ -2,6 +2,15 @@
 
 所有项目的重要变更都会记录在此文件中。
 
+## [1.6.2] - 2026-08-08
+
+### 修复问题
+
+- **memos v0.30+ 同步完全失败**: memos v0.30 修改了 CEL 时间过滤的语义 — `created_ts` 现在是 CEL `timestamp` 类型，与裸 epoch 数字比较会返回 HTTP 400（`no matching overload for '_>_' applied to '(timestamp, int)'`）。插件现在能自动识别该错误并去掉服务端过滤重试（本地仍按时间窗口过滤），新旧版 memos 服务器都能正常同步。
+- **报错一闪而过难以查看**: 同步失败提示闪现太快容易错过。现在失败提示会显示 10 秒，同时写入持久化日志文件（`.obsidian/plugins/yet-another-memos-sync/yams-sync-error.log`），并新增"查看同步错误日志"命令，未捕获的错误和 Promise 拒绝也会被记录。
+- **异常 API 响应导致崩溃**: `/api/v1/memos` 返回非 JSON 或格式异常时可能抛出 "Cannot read properties of undefined"。现在会记录响应体并返回空页而不是崩溃。
+- **错误定位到具体账户**: 同步失败时错误信息会标明是哪个账户（profile）失败，方便多账户用户排查。
+
 ## [1.6.1] - 2026-05-13
 
 ### 变更内容

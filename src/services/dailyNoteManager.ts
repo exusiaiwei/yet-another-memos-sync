@@ -36,8 +36,9 @@ export class DailyNoteManager {
       try {
         await this.syncProfile(profile, mode);
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error(`Sync failed for profile "${profile.name}":`, error);
-        throw error;
+        throw new Error(`Profile "${profile.name}": ${message}`);
       }
     }
     await this.state.markSyncedToday();

@@ -70,6 +70,8 @@ export const zhCnTranslations: Translations = {
   // Error messages
   NETWORK_ERROR: '网络错误: 无法连接到',
   FETCH_MEMOS_ERROR: '无法获取备忘录',
+  VIEW_ERROR_LOG: '查看同步错误日志',
+  VIEW_ERROR_LOG_EMPTY: '暂无错误日志。',
 
   // Generic buttons
   CONFIRM_OK: '确定',
