@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1] - 2026-09-01
+
+### 🔧 Fixed
+
+- **Mobile installation blocked**: Changed the plugin manifest to declare mobile compatibility. The plugin can now be installed and enabled on Android and iOS, where its Obsidian APIs and `requestUrl`-based sync already work.
+
 ## [1.7.0] - 2026-08-09
 
 ### Changed

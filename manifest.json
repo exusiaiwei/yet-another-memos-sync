@@ -6,5 +6,5 @@
 	"description": "Enhanced Memos sync plugin with emoji timeline and List Callout format support. Features intelligent sync, visual enhancements, and i18n support.",
 	"author": "exusiaiwei",
 	"authorUrl": "https://github.com/exusiaiwei",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }
