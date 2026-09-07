@@ -55,7 +55,7 @@ Unlike basic sync tools, it provides visual enhancements, smart synchronization,
 
 ### ⚙️ **Flexible Configuration**
 
-- **API version support** - Compatible with Memos v0.25.1 and legacy versions
+- **API version support** - Uses the Memos `/api/v1/memos` API, with a v0.30 time-filter compatibility fallback
 - **Custom headers** - Configurable memo section headers for organization
 - **Attachment handling** - Download and organize memo attachments automatically
 - **Daily note integration** - Seamless integration with Daily Notes plugin
@@ -94,10 +94,10 @@ npm run build
 ### Basic Setup
 
 1. Open **Settings** → **Yet Another Memos Sync**
-2. Configure your Memos server:
+2. Add a profile and configure your Memos server:
    - **API URL**: Your Memos server address (e.g., `https://your-memos.com`)
    - **API Token**: Generate from your Memos settings page
-   - **API Version**: Select your server version (v0.25.1 recommended)
+   - **Daily Notes Header**: Match the heading in your daily-note template exactly. No API version selector is required.
 
 ### Visual Style Selection
 
@@ -219,12 +219,11 @@ npm test
 
 ### Supported Memos Versions
 
-- ✅ **v0.25.1** (Latest, recommended)
-- ✅ **v0.24.x** (Fully supported)
-- ✅ **v0.23.x** (Fully supported)
-- ✅ **v0.22.x** (Fully supported)
-- ✅ **v0.21.x** (Fully supported)
-- ✅ **Legacy versions** (v0.20 and below)
+- **v0.30**: In use by the maintainer. YAMS 1.6.2 added a fallback for HTTP 400 responses caused by changed CEL time-filter types; time limits are still applied locally.
+- **v0.28**: The API response fields are handled, but [issue #5](https://github.com/exusiaiwei/yet-another-memos-sync/issues/5) reports a successful sync notification without new content. The report lacks the installed YAMS version and logs, so its cause remains unconfirmed.
+- Other versions are not covered by a full compatibility test matrix. Matching API fields alone does not prove end-to-end compatibility.
+
+If sync reports success without writing records, check the installed YAMS version, enabled profile, sync days limit, and exact daily-note heading. Incremental sync only fetches newly created memos; try **Force Sync All Memos** after checking these settings. When reporting an issue, include server/plugin versions and relevant console or sync errors, with tokens and private content removed.
 
 ## Contributing
 

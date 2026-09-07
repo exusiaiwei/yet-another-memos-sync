@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.8.0] - 2026-09-07
 
 ### 🎉 Added
 
@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 ### 🔧 Fixed
 
 - Match sync headings exactly and preserve adjacent sections without trimming or overlapping their content; serialize file updates to avoid stale sync writes.
+- Refresh Memos compatibility guidance and generate the Obsidian minimum version from the manifest in release notes.
+
 
 ## [1.7.1] - 2026-09-01
 

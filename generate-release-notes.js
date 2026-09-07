@@ -55,6 +55,7 @@ function extractReleaseNotes(version, language = 'en') {
 }
 
 function generateReleaseNotes(version, changelogContentEn, changelogContentZh) {
+  const { minAppVersion } = require('./manifest.json');
   const template = `## 🎉 What's New in ${version}
 
 ${changelogContentEn}
@@ -73,8 +74,8 @@ ${changelogContentZh}
 3. Enable the plugin in Obsidian settings / 在 Obsidian 设置中启用插件
 
 **Requirements / 系统要求:**
-- Obsidian v1.0.0 or higher / Obsidian v1.0.0 或更高版本
-- Memos server (supports v0.25.1 and legacy versions) / Memos 服务器（支持 v0.25.1 及历史版本）
+- Obsidian v${minAppVersion} or higher / Obsidian v${minAppVersion} 或更高版本
+- Memos server for sync; not required for local time records. See README for compatibility. / 同步功能需要 Memos 服务器，本地时间记录无需服务器；兼容性见 README。
 
 **Links / 相关链接:**
 - 📖 [Documentation / 文档](https://github.com/exusiaiwei/yet-another-memos-sync#readme)
