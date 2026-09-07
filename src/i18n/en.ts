@@ -1,6 +1,18 @@
 import { Translations } from './index';
 
 export const enTranslations: Translations = {
+  TIMELINE_TITLE: "Local time records",
+  TIMELINE_HEADER_NAME: "Time record heading",
+  TIMELINE_HEADER_DESC: "Leave blank until configured. Records use a separate level-2 heading in today’s daily note. Enter a title with or without ##, different from every Memos heading.",
+  TIMELINE_ADD: "Add time record",
+  TIMELINE_SUBMIT: "Add and open",
+  TIMELINE_INPUT_HINT: "Write a record. Ctrl/Cmd + Enter saves and opens it; Enter adds a new line. The time is captured when this dialog opens.",
+  TIMELINE_CONFIGURE: "Set a nonempty, single-line time record heading in plugin settings first.",
+  TIMELINE_CONFLICT: "The time record heading must differ from every Memos sync heading.",
+  TIMELINE_DAILY_NOTES: "Enable and configure Daily notes before adding a time record.",
+  TIMELINE_FAILED: "Could not add or open the time record",
+  TIMELINE_DUPLICATE: "Multiple matching level-2 headings found. Keep one destination heading and try again.",
+
   // Plugin info
   PLUGIN_NAME: 'Yet Another Memos Sync',
   PLUGIN_DESCRIPTION: 'Sync Memos to daily notes with emoji timeline',

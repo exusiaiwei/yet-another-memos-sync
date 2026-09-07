@@ -5,6 +5,8 @@ type MomentInstance = ReturnType<typeof moment>;
 import { MemosAPIClient } from '../api/memosClient';
 import { SimpleMemosPaginator } from '../api/memosPaginator';
 import { DailyNoteModifier } from '../utils/dailyNoteModifier';
+import { headingTitle } from '../utils/markdownSections';
+import { t } from '../i18n/translationManager';
 import { MemosProfile, MemosSettings } from '../types';
 
 export interface SyncStateStore {
@@ -45,6 +47,9 @@ export class DailyNoteManager {
   }
 
   private async syncProfile(profile: MemosProfile, mode: SyncMode): Promise<void> {
+    if (this.settings.timelineHeader.trim() && headingTitle(this.settings.timelineHeader) === headingTitle(profile.dailyMemoHeader)) {
+      throw new Error(t.t('TIMELINE_CONFLICT'));
+    }
     const client = new MemosAPIClient(profile.apiUrl, profile.apiToken);
     const lastTime = this.state.getLastSync(profile.id);
 
@@ -105,12 +110,9 @@ export class DailyNoteManager {
           return;
         }
 
-        const currentContent = await this.app.vault.read(dailyNote);
-        const modifiedContent = modifier.modifyDailyNote(currentContent, dateStr, memos, isIncrementalSync);
-
-        if (modifiedContent && modifiedContent !== currentContent) {
-          await this.app.vault.modify(dailyNote, modifiedContent);
-        }
+        await this.app.vault.process(dailyNote, currentContent =>
+          modifier.modifyDailyNote(currentContent, dateStr, memos, isIncrementalSync) ?? currentContent
+        );
 
         const timestamps = Object.keys(memos);
         if (timestamps.length > 0) {

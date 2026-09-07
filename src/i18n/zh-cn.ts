@@ -1,6 +1,18 @@
 import { Translations } from './index';
 
 export const zhCnTranslations: Translations = {
+  TIMELINE_TITLE: "本地时间记录",
+  TIMELINE_HEADER_NAME: "时间记录标题",
+  TIMELINE_HEADER_DESC: "默认留空。记录写入今天日记的独立二级标题下。填写标题文字即可，也可带 ##；不能与任何 Memos 同步标题重名。",
+  TIMELINE_ADD: "添加时间记录",
+  TIMELINE_SUBMIT: "添加并打开",
+  TIMELINE_INPUT_HINT: "输入记录，Ctrl/Cmd + Enter 保存并打开，回车换行。时间以打开此对话框的时刻为准。",
+  TIMELINE_CONFIGURE: "请先在插件设置中填写非空、单行的时间记录标题。",
+  TIMELINE_CONFLICT: "时间记录标题不能与任何 Memos 同步标题重名。",
+  TIMELINE_DAILY_NOTES: "请先启用并配置日记插件，再添加时间记录。",
+  TIMELINE_FAILED: "无法添加或打开时间记录",
+  TIMELINE_DUPLICATE: "发现多个同名二级标题，请保留一个目标标题后重试。",
+
   // Plugin info
   PLUGIN_NAME: '又一个 Memos 同步插件',
   PLUGIN_DESCRIPTION: '同步 Memos 到日记并添加时间表情符号',

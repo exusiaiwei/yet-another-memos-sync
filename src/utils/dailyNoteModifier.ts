@@ -4,14 +4,7 @@
 
 import { mergeTodoStates, isSameExceptTodoStates } from './todoStateManager';
 
-/**
- * Generate regex for finding header section in daily note
- */
-function generateHeaderRegExp(header: string): RegExp {
-  const formattedHeader = /^#+/.test(header.trim()) ? header.trim() : `# ${header.trim()}`;
-  const reg = new RegExp(`(${formattedHeader}[^\n]*)([\\s\\S]*?)(?=\\n#|$)`);
-  return reg;
-}
+import { headingTitle, markdownHeadings } from './markdownSections';
 
 export class DailyNoteModifier {
   private dailyMemosHeader: string;
@@ -31,19 +24,17 @@ export class DailyNoteModifier {
     isIncrementalSync = false,
   ): string | undefined {
     const header = this.dailyMemosHeader;
-    const reg = generateHeaderRegExp(header);
-    const regMatch = originFileContent.match(reg);
-
-    if (!regMatch?.length || regMatch.index === undefined) {
-      console.warn(
-        `Failed to find header "${header}" for ${today}. Please make sure your daily note template is correct.`
-      );
+    const headings = markdownHeadings(originFileContent);
+    const level = header.trim().match(/^(#{1,6})\s/)?.[1].length ?? 1;
+    const matches = headings.filter(h => h.level === level && h.title === headingTitle(header));
+    if (matches.length !== 1) {
+      console.warn(`Expected one header "${header}" for ${today}.`);
       return;
     }
-
-    const localRecordContent = regMatch[2]?.trim();
-    const from = regMatch.index + regMatch[1].length + 1;
-    const to = from + localRecordContent.length + 1;
+    const section = matches[0];
+    const from = section.end;
+    const to = headings.find(h => h.start >= from)?.start ?? originFileContent.length;
+    const localRecordContent = originFileContent.slice(from, to).trim();
     const prefix = originFileContent.slice(0, from);
     const suffix = originFileContent.slice(to);
 
@@ -143,7 +134,7 @@ export class DailyNoteModifier {
       .map(([_, content]) => content)
       .join("\n");
 
-    const modifiedFileContent = prefix.trim() + `\n\n${sortedMemos}\n\n` + suffix.trim() + "\n";
+    const modifiedFileContent = prefix + (prefix.endsWith("\n") ? "" : "\n") + `\n${sortedMemos}\n\n` + suffix;
     return modifiedFileContent;
   }
 }

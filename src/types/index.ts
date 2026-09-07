@@ -43,6 +43,8 @@ export interface MemosSettings {
   // Profiles - one per memos account/instance
   profiles: MemosProfile[];
 
+  timelineHeader: string;
+
   // Shared formatting settings
   attachmentFolderPath: string;
   createMissingDailyNotes: boolean;

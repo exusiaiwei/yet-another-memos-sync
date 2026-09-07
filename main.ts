@@ -1,6 +1,7 @@
 import { Plugin, Setting, PluginSettingTab, Notice, App, Modal, ButtonComponent, SettingDefinitionItem } from 'obsidian';
 import { DailyNoteManager, SyncStateStore, SyncMode } from './src/services/dailyNoteManager';
 import { MemosProfile, MemosSettings } from './src/types';
+import { registerTimelineCommand } from './src/commands/timeline';
 import { t } from './src/i18n/translationManager';
 
 interface LegacySettings {
@@ -16,6 +17,7 @@ interface LegacySettings {
 
 const DEFAULT_SETTINGS: MemosSettings = {
 	profiles: [],
+	timelineHeader: '',
 
 	attachmentFolderPath: 'attachments',
 	createMissingDailyNotes: true,
@@ -86,6 +88,8 @@ function migrateSettings(raw: unknown): MemosSettings {
 	if (typeof merged.lastSyncDate !== 'string') {
 		merged.lastSyncDate = '';
 	}
+
+	if (typeof merged.timelineHeader !== 'string') merged.timelineHeader = '';
 
 	// Strip legacy top-level fields so they don't get re-saved.
 	const cleaned = merged as MemosSettings & LegacySettings;
@@ -255,6 +259,8 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 			name: t.t('FORCE_SYNC_MEMOS'),
 			callback: () => { void this.runSync('force'); },
 		});
+
+		registerTimelineCommand(this, () => this.settings);
 
 		this.addSettingTab(new YetAnotherMemosSyncSettingTab(this.app, this));
 
@@ -459,6 +465,15 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 			},
 			{
 				type: 'group',
+				heading: t.t('TIMELINE_TITLE'),
+				items: [{
+					name: t.t('TIMELINE_HEADER_NAME'),
+					desc: t.t('TIMELINE_HEADER_DESC'),
+					control: { type: 'text', key: 'timelineHeader' },
+				}],
+			},
+			{
+				type: 'group',
 				heading: t.t('AUTO_SYNC_TITLE'),
 				items: [
 					{
@@ -489,6 +504,7 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 	getControlValue(key: string): unknown {
 		const settings = this.plugin.settings;
 		switch (key) {
+			case 'timelineHeader': return settings.timelineHeader;
 			case 'attachmentFolderPath': return settings.attachmentFolderPath;
 			case 'createMissingDailyNotes': return settings.createMissingDailyNotes;
 			case 'useCalloutFormat': return settings.useCalloutFormat;
@@ -505,6 +521,9 @@ class YetAnotherMemosSyncSettingTab extends PluginSettingTab {
 	setControlValue(key: string, value: unknown): void | Promise<void> {
 		const settings = this.plugin.settings;
 		switch (key) {
+			case 'timelineHeader':
+				settings.timelineHeader = String(value);
+				break;
 			case 'attachmentFolderPath':
 				settings.attachmentFolderPath = String(value);
 				break;

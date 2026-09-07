@@ -39,3 +39,8 @@ available in the app when your plugin is enabled.
   font-size: 0.85em;
   word-break: break-all;
 }
+
+.yams-timeline-input {
+  width: 100%;
+  resize: vertical;
+}

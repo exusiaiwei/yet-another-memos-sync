@@ -273,3 +273,11 @@ If this plugin helps you, consider:
 *Made with ❤️ for the Obsidian community*
 
 </div>
+
+## Local time records
+
+Set **Local time records → Time record heading** to a title distinct from every Memos sync heading. This setting is blank by default. Enable and configure Obsidian’s **Daily notes** core plugin first.
+
+Run **Add time record**, enter text, then select **Add and open** (or press Ctrl/Cmd + Enter). The command adds a list item with a local-time emoji and `HH:mm`, opens the daily note, and places the cursor at the end of the record. Enter inserts a newline; continuation lines are indented. Empty input and cancellation do not write anything.
+
+The timestamp and destination date are captured when the dialog opens, including across midnight. Missing daily notes are created using the daily-note template, and a missing destination is added as a level-2 heading. This explicit command creates the note regardless of the automatic sync “Create missing daily notes” setting. Records stay local and require no Memos account. Their separate section is preserved by sync. You can then start Text Block Timer manually; List Callouts styling is optional. Neither plugin is required.

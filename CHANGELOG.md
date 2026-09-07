@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🎉 Added
+
+- Add local time records through a multiline dialog, with an optional separate heading (blank by default), time-of-day emoji, daily-note creation, and automatic navigation to the new record.
+
+### 🔧 Fixed
+
+- Match sync headings exactly and preserve adjacent sections without trimming or overlapping their content; serialize file updates to avoid stale sync writes.
+
 ## [1.7.1] - 2026-09-01
 
 ### 🔧 Fixed

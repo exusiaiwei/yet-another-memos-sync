@@ -3,6 +3,18 @@ export type SupportedLanguage = 'en' | 'zh-cn' | 'zh-tw' | 'ja' | 'ko' | 'fr' | 
 
 // 翻译文本接口
 export interface Translations {
+  TIMELINE_TITLE: string;
+  TIMELINE_HEADER_NAME: string;
+  TIMELINE_HEADER_DESC: string;
+  TIMELINE_ADD: string;
+  TIMELINE_SUBMIT: string;
+  TIMELINE_INPUT_HINT: string;
+  TIMELINE_CONFIGURE: string;
+  TIMELINE_CONFLICT: string;
+  TIMELINE_DAILY_NOTES: string;
+  TIMELINE_FAILED: string;
+  TIMELINE_DUPLICATE: string;
+
   // 插件设置
   PLUGIN_NAME: string;
   PLUGIN_DESCRIPTION: string;
