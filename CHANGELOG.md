@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🔧 Fixed
+
+- Locate newly added time records in the live editor after closing the dialog, avoiding stale offsets during file refresh, preceding content changes, and CRLF normalization.
+
 ## [1.8.1] - 2026-09-07
 
 ### 🔧 Fixed

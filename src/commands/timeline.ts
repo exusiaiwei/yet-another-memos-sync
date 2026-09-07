@@ -2,6 +2,7 @@ import { MarkdownView, Notice, Plugin, TFile, moment } from 'obsidian';
 import { createDailyNote, getAllDailyNotes, getDailyNote, appHasDailyNotesPluginLoaded } from 'obsidian-daily-notes-interface';
 import { MemosSettings } from '../types';
 import { t } from '../i18n/translationManager';
+import { createTimelineAnchor, locateTimelineCursor, waitForTimelineCursor, TimelineAnchor } from '../utils/timelineCursor';
 import { TimelineModal } from '../ui/timelineModal';
 import { insertTimelineEntry, validateTimelineHeader } from '../utils/timelineEntry';
 
@@ -29,7 +30,7 @@ export function registerTimelineCommand(plugin: Plugin, settings: () => MemosSet
       }
       const started = new Date();
       active = true;
-      let saved: { file: TFile; cursor: number } | undefined;
+      let saved: { file: TFile; anchor: TimelineAnchor } | undefined;
       const modal = new TimelineModal(plugin.app, async text => {
         // Keep successful writes across navigation retries, avoiding duplicate entries.
         if (!saved) {
@@ -37,22 +38,33 @@ export function registerTimelineCommand(plugin: Plugin, settings: () => MemosSet
           const day = moment(started);
           const candidate = getDailyNote(day, getAllDailyNotes()) ?? await createDailyNote(day);
           if (!(candidate instanceof TFile)) throw new Error(t.t('TIMELINE_FAILED'));
-          let cursor = 0;
+          let anchor: TimelineAnchor | undefined;
           await plugin.app.vault.process(candidate, content => {
             const result = insertTimelineEntry(content, header, text, started);
-            cursor = result.cursor;
+            anchor = createTimelineAnchor(result.content, header, result.entry);
             return result.content;
           });
-          saved = { file: candidate, cursor };
+          if (!anchor) throw new Error(t.t('TIMELINE_FAILED'));
+          saved = { file: candidate, anchor };
         }
         const leaf = plugin.app.workspace.getLeaf(false);
         await leaf.openFile(saved.file, { state: { mode: 'source' } });
         if (!(leaf.view instanceof MarkdownView)) throw new Error(t.t('TIMELINE_FAILED'));
         const editor = leaf.view.editor;
-        const position = editor.offsetToPos(saved.cursor);
-        editor.setCursor(position);
-        editor.scrollIntoView({ from: position, to: position }, true);
-        return () => editor.focus();
+        const anchor = saved.anchor;
+        await waitForTimelineCursor(() => editor.getValue(), anchor);
+        // Closing the modal restores the previous focus/selection. Position the
+        // cursor afterwards, and resolve again in case sync changed earlier text.
+        return () => {
+          const position = locateTimelineCursor(editor.getValue(), anchor);
+          if (!position) {
+            new Notice(t.t('TIMELINE_FAILED'));
+            return;
+          }
+          editor.focus();
+          editor.setCursor(position);
+          editor.scrollIntoView({ from: position, to: position }, true);
+        };
       }, () => { active = false; currentModal = undefined; });
       currentModal = modal;
       modal.open();

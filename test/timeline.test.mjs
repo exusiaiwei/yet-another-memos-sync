@@ -85,3 +85,44 @@ test('empty sections and paragraphs retain a blank line before the new list', ()
     assert.ok(result.content.includes(`${before.trimEnd()}\n\n- 🌆 17:10 new`));
   }
 });
+
+
+const { createTimelineAnchor, locateTimelineCursor, waitForTimelineCursor } = load('src/utils/timelineCursor.ts');
+
+test('cursor follows its record after preceding dataviewjs and sync content shifts', () => {
+  const original = '```dataviewjs\ndv.table([])\n```\n\n## Memos\n- old\n\n## Local\n';
+  const added = insertTimelineEntry(original, 'Local', 'new\ncontinued', date);
+  const anchor = createTimelineAnchor(added.content, 'Local', added.entry);
+  assert.equal(locateTimelineCursor(original, anchor), null);
+  const updated = added.content.replace('- old', '- old\n- another synced memo\n- more');
+  const position = locateTimelineCursor(updated, anchor);
+  assert.equal(updated.split('\n')[position.line], '  continued');
+  assert.equal(position.ch, '  continued'.length);
+  assert.deepEqual(locateTimelineCursor(updated.replace(/\n/g, '\r\n'), anchor), position);
+});
+
+test('identical older records do not satisfy the newly inserted record anchor', () => {
+  const first = insertTimelineEntry('## Local\n', 'Local', 'same', date);
+  const second = insertTimelineEntry(first.content, 'Local', 'same', date);
+  const anchor = createTimelineAnchor(second.content, 'Local', second.entry);
+  assert.equal(locateTimelineCursor(first.content, anchor), null);
+  const position = locateTimelineCursor(second.content, anchor);
+  assert.equal(position.line, 3);
+});
+
+test('waits for the saved record to reach the live editor before returning a cursor', async () => {
+  const original = '## Local\n';
+  const added = insertTimelineEntry(original, 'Local', 'new', date);
+  const anchor = createTimelineAnchor(added.content, 'Local', added.entry);
+  const previousWindow = globalThis.window;
+  globalThis.window = { setTimeout };
+  try {
+    let reads = 0;
+    const position = await waitForTimelineCursor(() => ++reads < 3 ? original : added.content, anchor);
+    assert.equal(reads, 3);
+    assert.equal(added.content.split('\n')[position.line], added.entry);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});

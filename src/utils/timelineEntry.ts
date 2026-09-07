@@ -9,7 +9,7 @@ export function validateTimelineHeader(header: string, syncHeaders: string[]): '
 }
 
 /** Append a record, normalizing only trailing section spacing; the cursor follows the input. */
-export function insertTimelineEntry(content: string, header: string, text: string, date: Date): { content: string; cursor: number } {
+export function insertTimelineEntry(content: string, header: string, text: string, date: Date): { content: string; cursor: number; entry: string } {
   const title = headingTitle(header);
   const headings = markdownHeadings(content);
   const matches = headings.filter(h => h.level === 2 && h.title === title);
@@ -36,5 +36,5 @@ export function insertTimelineEntry(content: string, header: string, text: strin
     prefix += `## ${title}${eol}${eol}`;
   }
   const inserted = prefix + entry;
-  return { content: inserted + eol + eol + content.slice(end), cursor: inserted.length };
+  return { content: inserted + eol + eol + content.slice(end), cursor: inserted.length, entry };
 }
