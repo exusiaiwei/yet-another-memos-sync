@@ -33,7 +33,7 @@ test('append to existing section, ignoring fake headings in code and preserving 
   const original = '```md\n## Local\n```\n\n## Local\n\n- old\n\n' + suffix;
   const result = insertTimelineEntry(original, '## Local', 'new', date);
   assert.ok(result.content.endsWith(suffix));
-  assert.ok(result.content.includes('- old\n\n- 🌆 17:10 new'));
+  assert.ok(result.content.includes('- old\n- 🌆 17:10 new'));
   assert.throws(() => insertTimelineEntry('## Local\n## Local\n', 'Local', 'new', date), /duplicate/);
 });
 
@@ -65,4 +65,23 @@ test('sync matches exact heading, not similar titles or fenced examples', () => 
   const result = new DailyNoteModifier('## Memos').modifyDailyNote(original, 'today', { 2: '- new ^2' });
   assert.ok(result.startsWith(prefix));
   assert.ok(result.endsWith('## Local\nKeep local\n'));
+});
+
+
+test('repeated appends form a contiguous list, preserving multiline text and the next heading', () => {
+  for (const eol of ['\n', '\r\n']) {
+    const suffix = `## Later${eol}Keep${eol}`;
+    const original = `## Local${eol}${eol}- old  ${eol}  continuation${eol}  ${eol}${eol}${suffix}`;
+    const first = insertTimelineEntry(original, 'Local', 'one', date);
+    const second = insertTimelineEntry(first.content, 'Local', 'two', date);
+    assert.equal(second.content, `## Local${eol}${eol}- old  ${eol}  continuation${eol}- 🌆 17:10 one${eol}- 🌆 17:10 two${eol}${eol}${suffix}`);
+    assert.equal(second.content.slice(0, second.cursor).endsWith('two'), true);
+  }
+});
+
+test('empty sections and paragraphs retain a blank line before the new list', () => {
+  for (const before of ['## Local', '## Local\n\n', '## Local\n\nParagraph\n\n']) {
+    const result = insertTimelineEntry(before, 'Local', 'new', date);
+    assert.ok(result.content.includes(`${before.trimEnd()}\n\n- 🌆 17:10 new`));
+  }
 });

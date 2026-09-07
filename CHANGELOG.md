@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### 🔧 Fixed
+
+- Append local time records directly after existing list items without adding an empty line between entries.
+
 ## [1.8.0] - 2026-09-07
 
 ### 🎉 Added

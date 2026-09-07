@@ -8,7 +8,7 @@ export function validateTimelineHeader(header: string, syncHeaders: string[]): '
   return null;
 }
 
-/** Insert without rewriting any existing content; the cursor follows the last input line. */
+/** Append a record, normalizing only trailing section spacing; the cursor follows the input. */
 export function insertTimelineEntry(content: string, header: string, text: string, date: Date): { content: string; cursor: number } {
   const title = headingTitle(header);
   const headings = markdownHeadings(content);
@@ -21,11 +21,20 @@ export function insertTimelineEntry(content: string, header: string, text: strin
   const entry = `- ${getTimeEmoji(date.getHours())} ${time} ${body}`;
   // Stop at any heading, keeping entries directly under the configured heading.
   const end = heading ? (headings.find(h => h.start >= heading.end)?.start ?? content.length) : content.length;
-  const before = content.slice(0, end);
-  let prefix = before;
-  if (!prefix.endsWith(eol) && prefix) prefix += eol;
-  if (!prefix.endsWith(eol + eol) && prefix) prefix += eol;
-  if (!heading) prefix += `## ${title}${eol}${eol}`;
+  let prefix = content.slice(0, end);
+  if (heading) {
+    const section = content.slice(heading.end, end);
+    // An indented continuation belongs to its preceding list item. A plain
+    // paragraph needs a blank line before the new list instead.
+    const lastTopLevelLine = section.split(/\r?\n/).filter(line => /^(\S)/.test(line)).pop();
+    const followsList = !!lastTopLevelLine && /^(?:[-*+]|\d+[.)])\s/.test(lastTopLevelLine);
+    prefix = prefix.replace(/(?:\r?\n[ \t]*)+$/, '');
+    prefix += followsList ? eol : eol + eol;
+  } else {
+    if (!prefix.endsWith(eol) && prefix) prefix += eol;
+    if (!prefix.endsWith(eol + eol) && prefix) prefix += eol;
+    prefix += `## ${title}${eol}${eol}`;
+  }
   const inserted = prefix + entry;
   return { content: inserted + eol + eol + content.slice(end), cursor: inserted.length };
 }
