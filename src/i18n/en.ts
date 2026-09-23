@@ -76,7 +76,7 @@ export const enTranslations: Translations = {
 
   // Buttons and commands
   SYNC_MEMOS: 'Smart Sync Memos',
-  INCREMENTAL_SYNC_MEMOS: 'Incremental Sync (New Only)',
+  INCREMENTAL_SYNC_MEMOS: 'Sync Memos (Window)',
   FORCE_SYNC_MEMOS: 'Force Sync All Memos',
 
   // Notification messages

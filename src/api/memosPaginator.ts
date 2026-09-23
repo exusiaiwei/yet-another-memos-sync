@@ -1,17 +1,29 @@
 import { moment } from 'obsidian';
-import { Memo, MemosPaginator, APIClient, ListMemosPage } from '../types';
+import { Memo, APIClient, ListMemosPage } from '../types';
 import { transformMemoToMarkdown } from '../utils/memoTransformer';
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 200;
 
 /**
- * Build the CEL filter for incremental sync and time-window cap.
- * Uses memos v0.28 schema field `created_ts` (unix seconds).
+ * Ordered CEL filter candidates for the sync time window, tried in order
+ * until one is accepted:
+ *
+ *  1. `timestamp(N)` - the currently documented syntax (memos' filter/README.md,
+ *     filter/time_test.go): `created_ts` is a CEL `timestamp`, so a bare int
+ *     fails to compile ("no matching overload for '_>_' applied to
+ *     '(timestamp, int)'") as of the schema change in memos v0.30.0 (2026-07).
+ *  2. a bare int - the pre-v0.30 schema, where `created_ts` was an int.
+ *  3. '' (no server-side filter) - belt-and-suspenders for anything else;
+ *     the local cutoff check in collect() still enforces syncDaysLimit.
  */
-function buildFilter(lastTimestamp: number, cutoffTimestamp: number): string {
-  const since = Math.max(lastTimestamp, cutoffTimestamp);
-  return since > 0 ? `created_ts > ${since}` : '';
+function buildFilterCandidates(cutoffTimestamp: number): string[] {
+  if (cutoffTimestamp <= 0) return [''];
+  return [
+    `created_ts > timestamp(${cutoffTimestamp})`,
+    `created_ts > ${cutoffTimestamp}`,
+    '',
+  ];
 }
 
 function extractTimestamp(memo: Memo): number | null {
@@ -28,46 +40,64 @@ function extractTimestamp(memo: Memo): number | null {
   return null;
 }
 
-export class SimpleMemosPaginator implements MemosPaginator {
+export interface MemosWindow {
+  dailyMemosByDay: Record<string, Record<string, string>>;
+  latestTimestamp: string;
+  cutoffTimestamp: number;
+}
+
+/**
+ * Fetches every memo within the sync window (bounded by syncDaysLimit, or
+ * unlimited when syncDaysLimit is 0) and buckets it by local day.
+ *
+ * Deliberately NOT cursor-based. The previous implementation skipped any
+ * memo with `created_ts <= lastSyncedTimestamp`, which meant a single
+ * out-of-order memo (backdated, or future-dated via Memos' "edit time"
+ * feature) permanently broke incremental sync: a future timestamp becomes
+ * a cursor nothing can ever exceed, and a backdated memo looks like it was
+ * already synced. Refetching and fully reconciling the whole window on
+ * every sync costs more, but stays correct regardless of creation order,
+ * and lets deletions be detected even for days where every memo on that
+ * day was removed (the caller still has to be told about those days -
+ * see DailyNoteManager.processMemos).
+ */
+export class SimpleMemosPaginator {
   constructor(
     private client: APIClient,
-    private lastTime: string,
     private useCalloutFormat: boolean,
     private useListCalloutFormat: boolean,
     private skipImages: boolean,
     private syncDaysLimit: number,
   ) {}
 
-  async foreach(handler: (dayData: [string, Record<string, string>]) => Promise<void>): Promise<string> {
+  async collect(): Promise<MemosWindow> {
     const dailyMemosByDay: Record<string, Record<string, string>> = {};
     let latestTimestamp = '';
 
     const cutoffTimestamp = this.syncDaysLimit > 0
       ? moment().subtract(this.syncDaysLimit, 'days').startOf('day').unix()
       : 0;
-    const lastTimestamp = this.lastTime ? parseInt(this.lastTime) : 0;
-    let filter = buildFilter(lastTimestamp, cutoffTimestamp);
+    const filterCandidates = buildFilterCandidates(cutoffTimestamp);
+    let filterCandidateIndex = 0;
+    let filter = filterCandidates[filterCandidateIndex];
 
     let pageToken = '';
     let pages = 0;
     let exhausted = false;
-    let filterDropped = false;
 
     while (!exhausted) {
       let page: ListMemosPage;
       try {
         page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
       } catch (error) {
-        // memos v0.30.0 (2026-07) changed CEL time-filter semantics: `created_ts`
-        // is now a CEL timestamp and comparing it against a bare epoch int fails
-        // with HTTP 400 ("no matching overload for '_>_' applied to '(timestamp, int)'").
-        // Fall back to fetching without a server-side filter; the local time-window
-        // checks below still enforce syncDaysLimit / lastTime, so this stays correct
-        // on both old and new memos versions.
-        if (!filterDropped && filter && error instanceof Error && /HTTP 400/.test(error.message)) {
-          filterDropped = true;
-          filter = '';
-          console.warn('Memos rejected the CEL filter (HTTP 400); retrying without a server-side filter.');
+        // Try the next filter syntax candidate on a filter-compile rejection
+        // (see buildFilterCandidates) rather than surfacing it - memos server
+        // versions disagree on whether `created_ts` is a CEL timestamp or a
+        // bare int, and there's no cheap way to ask which one we're talking to.
+        const hasMoreCandidates = filterCandidateIndex < filterCandidates.length - 1;
+        if (hasMoreCandidates && filter && error instanceof Error && /HTTP 400/.test(error.message)) {
+          filterCandidateIndex += 1;
+          filter = filterCandidates[filterCandidateIndex];
           continue;
         }
         throw error;
@@ -83,7 +113,6 @@ export class SimpleMemosPaginator implements MemosPaginator {
           }
 
           if (cutoffTimestamp > 0 && timestamp < cutoffTimestamp) continue;
-          if (lastTimestamp > 0 && timestamp <= lastTimestamp) continue;
 
           const dailyMemo = transformMemoToMarkdown(
             {
@@ -117,10 +146,6 @@ export class SimpleMemosPaginator implements MemosPaginator {
       }
     }
 
-    for (const [date, dayMemos] of Object.entries(dailyMemosByDay)) {
-      await handler([date, dayMemos]);
-    }
-
-    return latestTimestamp || this.lastTime;
+    return { dailyMemosByDay, latestTimestamp, cutoffTimestamp };
   }
 }

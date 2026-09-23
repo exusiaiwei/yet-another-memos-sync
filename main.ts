@@ -11,7 +11,6 @@ interface LegacySettings {
 	dailyMemoHeader?: unknown;
 	syncDaysLimit?: unknown;
 	profiles?: unknown;
-	lastSyncByProfile?: unknown;
 	lastSyncDate?: unknown;
 }
 
@@ -30,7 +29,6 @@ const DEFAULT_SETTINGS: MemosSettings = {
 	skipIfSyncedToday: true,
 	periodicSyncInterval: 0,
 
-	lastSyncByProfile: {},
 	lastSyncDate: '',
 };
 
@@ -53,9 +51,10 @@ function defaultProfile(): MemosProfile {
 /**
  * Migrate flat v1.5.x settings (apiUrl/apiToken/...) into the new profiles[] shape.
  *
- * Users coming directly from <= 1.5.x will see one extra full sync after the upgrade
- * because the legacy localStorage-based lastSyncTime is intentionally no longer read here
- * (it was migrated by v1.6.0; the plugin store guidelines discourage raw localStorage access).
+ * Also drops the per-profile sync cursor (`lastSyncByProfile`) that older
+ * versions persisted: sync is no longer cursor-based (see
+ * SimpleMemosPaginator), so any stored cursor - including one poisoned by
+ * an out-of-order memo timestamp - is simply discarded on upgrade.
  */
 function migrateSettings(raw: unknown): MemosSettings {
 	const legacy = (raw && typeof raw === 'object' ? raw : {}) as LegacySettings;
@@ -82,9 +81,6 @@ function migrateSettings(raw: unknown): MemosSettings {
 		}
 	}
 
-	if (!merged.lastSyncByProfile || typeof merged.lastSyncByProfile !== 'object') {
-		merged.lastSyncByProfile = {};
-	}
 	if (typeof merged.lastSyncDate !== 'string') {
 		merged.lastSyncDate = '';
 	}
@@ -92,12 +88,13 @@ function migrateSettings(raw: unknown): MemosSettings {
 	if (typeof merged.timelineHeader !== 'string') merged.timelineHeader = '';
 
 	// Strip legacy top-level fields so they don't get re-saved.
-	const cleaned = merged as MemosSettings & LegacySettings;
+	const cleaned = merged as MemosSettings & LegacySettings & { lastSyncByProfile?: unknown };
 	delete cleaned.apiUrl;
 	delete cleaned.apiToken;
 	delete cleaned.apiVersion;
 	delete cleaned.dailyMemoHeader;
 	delete cleaned.syncDaysLimit;
+	delete cleaned.lastSyncByProfile;
 
 	return merged;
 }
@@ -305,13 +302,6 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 	}
 
 	// SyncStateStore impl
-	getLastSync(profileId: string): string {
-		return this.settings.lastSyncByProfile[profileId] || '';
-	}
-	async setLastSync(profileId: string, value: string): Promise<void> {
-		this.settings.lastSyncByProfile[profileId] = value;
-		await this.saveData(this.settings);
-	}
 	async markSyncedToday(): Promise<void> {
 		this.settings.lastSyncDate = new Date().toDateString();
 		await this.saveData(this.settings);
@@ -387,7 +377,6 @@ export default class YetAnotherMemosSyncPlugin extends Plugin implements SyncSta
 
 	removeProfile(profileId: string): void {
 		this.settings.profiles = this.settings.profiles.filter(p => p.id !== profileId);
-		delete this.settings.lastSyncByProfile[profileId];
 	}
 }
 

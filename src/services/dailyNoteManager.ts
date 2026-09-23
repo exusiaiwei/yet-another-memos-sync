@@ -1,5 +1,5 @@
 import { App, TFile, moment } from 'obsidian';
-import { getDailyNote, createDailyNote, getAllDailyNotes } from 'obsidian-daily-notes-interface';
+import { getDailyNote, createDailyNote, getAllDailyNotes, getDateFromFile } from 'obsidian-daily-notes-interface';
 
 type MomentInstance = ReturnType<typeof moment>;
 import { MemosAPIClient } from '../api/memosClient';
@@ -10,8 +10,6 @@ import { t } from '../i18n/translationManager';
 import { MemosProfile, MemosSettings } from '../types';
 
 export interface SyncStateStore {
-  getLastSync(profileId: string): string;
-  setLastSync(profileId: string, value: string): Promise<void>;
   markSyncedToday(): Promise<void>;
 }
 
@@ -51,82 +49,68 @@ export class DailyNoteManager {
       throw new Error(t.t('TIMELINE_CONFLICT'));
     }
     const client = new MemosAPIClient(profile.apiUrl, profile.apiToken);
-    const lastTime = this.state.getLastSync(profile.id);
 
-    let effectiveLastTime: string;
-    let isIncrementalSync: boolean;
-
-    if (mode === 'force') {
-      effectiveLastTime = '';
-      isIncrementalSync = false;
-    } else if (mode === 'incremental') {
-      effectiveLastTime = lastTime;
-      isIncrementalSync = true;
-    } else {
-      // smart: full sync if never synced before, otherwise incremental
-      if (!lastTime) {
-        effectiveLastTime = '';
-        isIncrementalSync = false;
-      } else {
-        effectiveLastTime = lastTime;
-        isIncrementalSync = true;
-      }
-    }
+    // 'force' ignores syncDaysLimit and reconciles the entire history.
+    // 'smart' and 'incremental' both reconcile the full syncDaysLimit window
+    // on every run - see SimpleMemosPaginator for why cursor-based
+    // incremental fetching was dropped (it broke permanently on any
+    // out-of-order memo timestamp, backdated or future-dated).
+    const effectiveSyncDaysLimit = mode === 'force' ? 0 : profile.syncDaysLimit;
 
     const paginator = new SimpleMemosPaginator(
       client,
-      effectiveLastTime,
       this.settings.useCalloutFormat,
       this.settings.useListCalloutFormat,
       this.settings.skipImages,
-      profile.syncDaysLimit,
+      effectiveSyncDaysLimit,
     );
 
-    const newLastTime = await this.processMemos(paginator, profile, isIncrementalSync);
-    if (newLastTime && newLastTime !== lastTime) {
-      await this.state.setLastSync(profile.id, newLastTime);
-    }
+    await this.processMemos(paginator, profile);
   }
 
   private async processMemos(
     paginator: SimpleMemosPaginator,
     profile: MemosProfile,
-    isIncrementalSync: boolean,
-  ): Promise<string> {
+  ): Promise<void> {
     const modifier = new DailyNoteModifier(profile.dailyMemoHeader);
-    let lastTime = '';
+    const { dailyMemosByDay, cutoffTimestamp } = await paginator.collect();
 
-    await paginator.foreach(async ([dateStr, memos]) => {
+    // A day whose memos were all deleted remotely never appears in
+    // dailyMemosByDay (there's nothing fetched for it), so without this it
+    // would be silently skipped and its stale entries would never be
+    // cleaned up. Add an empty bucket for every existing daily note inside
+    // the sync window so modifyDailyNote still runs deletion detection
+    // against it.
+    for (const file of Object.values(getAllDailyNotes())) {
+      const day = getDateFromFile(file, 'day');
+      if (!day) continue;
+      if (cutoffTimestamp > 0 && day.unix() < cutoffTimestamp) continue;
+      const dateStr = day.format('YYYY-MM-DD');
+      if (!(dateStr in dailyMemosByDay)) {
+        dailyMemosByDay[dateStr] = {};
+      }
+    }
+
+    for (const [dateStr, memos] of Object.entries(dailyMemosByDay)) {
       try {
         const momentDay = moment(dateStr);
         if (!momentDay.isValid()) {
           console.warn(`Invalid date: ${dateStr}`);
-          return;
+          continue;
         }
 
         const dailyNote = await this.getOrCreateDailyNote(momentDay);
         if (!dailyNote) {
-          console.warn(`Could not create daily note for ${dateStr}`);
-          return;
+          continue;
         }
 
         await this.app.vault.process(dailyNote, currentContent =>
-          modifier.modifyDailyNote(currentContent, dateStr, memos, isIncrementalSync) ?? currentContent
+          modifier.modifyDailyNote(currentContent, dateStr, memos) ?? currentContent
         );
-
-        const timestamps = Object.keys(memos);
-        if (timestamps.length > 0) {
-          const latest = Math.max(...timestamps.map(t => parseInt(t))).toString();
-          if (!lastTime || parseInt(latest) > parseInt(lastTime)) {
-            lastTime = latest;
-          }
-        }
       } catch (error) {
         console.error(`Failed to process memos for ${dateStr}:`, error);
       }
-    });
-
-    return lastTime;
+    }
   }
 
   private async getOrCreateDailyNote(momentDay: MomentInstance): Promise<TFile | null> {
