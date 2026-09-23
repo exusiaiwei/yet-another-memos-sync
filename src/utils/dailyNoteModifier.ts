@@ -21,7 +21,6 @@ export class DailyNoteModifier {
     originFileContent: string,
     today: string,
     fetchedRecordList: Record<string, string>,
-    isIncrementalSync = false,
   ): string | undefined {
     const header = this.dailyMemosHeader;
     const headings = markdownHeadings(originFileContent);
@@ -93,13 +92,14 @@ export class DailyNoteModifier {
       }
     }
 
-    // Find deletions (existing memos not in fetched list)
-    // CRITICAL: Only perform deletion detection in full sync mode!
-    if (!isIncrementalSync) {
-      for (const timestamp of existingMemos.keys()) {
-        if (!fetchedRecordList[timestamp]) {
-          deletions.add(timestamp);
-        }
+    // Find deletions (existing memos not in fetched list). Safe to run
+    // unconditionally: the caller always fetches the complete state for
+    // this day within the sync window (see SimpleMemosPaginator /
+    // DailyNoteManager.processMemos), so fetchedRecordList is authoritative
+    // for `today`, not a partial/incremental slice.
+    for (const timestamp of existingMemos.keys()) {
+      if (!fetchedRecordList[timestamp]) {
+        deletions.add(timestamp);
       }
     }
 

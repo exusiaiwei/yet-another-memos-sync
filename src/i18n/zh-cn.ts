@@ -76,7 +76,7 @@ export const zhCnTranslations: Translations = {
 
   // Buttons and commands
   SYNC_MEMOS: '智能同步备忘录',
-  INCREMENTAL_SYNC_MEMOS: '增量同步（仅新内容）',
+  INCREMENTAL_SYNC_MEMOS: '同步备忘录（窗口内）',
   FORCE_SYNC_MEMOS: '强制同步所有备忘录',
 
   // Notification messages

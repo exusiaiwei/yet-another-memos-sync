@@ -58,8 +58,6 @@ export interface MemosSettings {
   skipIfSyncedToday: boolean;
   periodicSyncInterval: number;
 
-  // Persisted sync state (per profile id -> latest synced unix seconds)
-  lastSyncByProfile: Record<string, string>;
   lastSyncDate: string;
 }
 
@@ -76,8 +74,4 @@ export interface ListMemosOptions {
 
 export interface APIClient {
   listMemos(opts?: ListMemosOptions): Promise<ListMemosPage>;
-}
-
-export interface MemosPaginator {
-  foreach(handler: (dayData: [string, Record<string, string>]) => Promise<void>): Promise<string>;
 }

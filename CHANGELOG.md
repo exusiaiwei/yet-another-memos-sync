@@ -8,6 +8,13 @@ All notable changes to this project will be documented in this file.
 
 - Locate newly added time records in the live editor after closing the dialog, avoiding stale offsets during file refresh, preceding content changes, and CRLF normalization.
 
+## [1.8.2] - 2026-09-23
+
+### 🔧 Fixed
+
+- Stop using a single "last synced timestamp" cursor for incremental sync. Any out-of-order memo - backdated, or future-dated via Memos' "edit time" feature - would permanently break future syncs: a future timestamp becomes a cursor nothing can ever exceed, and a backdated memo looks like it was already synced and gets skipped forever. Sync now always reconciles the full `syncDaysLimit` window on every run instead of trusting creation order.
+- Detect deletions on days where every memo was removed remotely. Deletion detection previously only ran for days that still had at least one memo left in the current fetch, so wiping out a whole day's memos left its stale entries in the daily note forever. Every existing daily note inside the sync window is now reconciled, even when it has no memos left to fetch.
+
 ## [1.8.1] - 2026-09-07
 
 ### 🔧 Fixed
