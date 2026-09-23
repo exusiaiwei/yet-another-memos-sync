@@ -6,11 +6,24 @@ const PAGE_SIZE = 200;
 const MAX_PAGES = 200;
 
 /**
- * Build the CEL filter for the sync time window.
- * Uses memos v0.28 schema field `created_ts` (unix seconds).
+ * Ordered CEL filter candidates for the sync time window, tried in order
+ * until one is accepted:
+ *
+ *  1. `timestamp(N)` - the currently documented syntax (memos' filter/README.md,
+ *     filter/time_test.go): `created_ts` is a CEL `timestamp`, so a bare int
+ *     fails to compile ("no matching overload for '_>_' applied to
+ *     '(timestamp, int)'") as of the schema change in memos v0.30.0 (2026-07).
+ *  2. a bare int - the pre-v0.30 schema, where `created_ts` was an int.
+ *  3. '' (no server-side filter) - belt-and-suspenders for anything else;
+ *     the local cutoff check in collect() still enforces syncDaysLimit.
  */
-function buildFilter(cutoffTimestamp: number): string {
-  return cutoffTimestamp > 0 ? `created_ts > ${cutoffTimestamp}` : '';
+function buildFilterCandidates(cutoffTimestamp: number): string[] {
+  if (cutoffTimestamp <= 0) return [''];
+  return [
+    `created_ts > timestamp(${cutoffTimestamp})`,
+    `created_ts > ${cutoffTimestamp}`,
+    '',
+  ];
 }
 
 function extractTimestamp(memo: Memo): number | null {
@@ -64,28 +77,27 @@ export class SimpleMemosPaginator {
     const cutoffTimestamp = this.syncDaysLimit > 0
       ? moment().subtract(this.syncDaysLimit, 'days').startOf('day').unix()
       : 0;
-    let filter = buildFilter(cutoffTimestamp);
+    const filterCandidates = buildFilterCandidates(cutoffTimestamp);
+    let filterCandidateIndex = 0;
+    let filter = filterCandidates[filterCandidateIndex];
 
     let pageToken = '';
     let pages = 0;
     let exhausted = false;
-    let filterDropped = false;
 
     while (!exhausted) {
       let page: ListMemosPage;
       try {
         page = await this.client.listMemos({ pageSize: PAGE_SIZE, pageToken, filter });
       } catch (error) {
-        // memos v0.30.0 (2026-07) changed CEL time-filter semantics: `created_ts`
-        // is now a CEL timestamp and comparing it against a bare epoch int fails
-        // with HTTP 400 ("no matching overload for '_>_' applied to '(timestamp, int)'").
-        // Fall back to fetching without a server-side filter; the local cutoff
-        // check below still enforces syncDaysLimit, so this stays correct on
-        // both old and new memos versions.
-        if (!filterDropped && filter && error instanceof Error && /HTTP 400/.test(error.message)) {
-          filterDropped = true;
-          filter = '';
-          console.warn('Memos rejected the CEL filter (HTTP 400); retrying without a server-side filter.');
+        // Try the next filter syntax candidate on a filter-compile rejection
+        // (see buildFilterCandidates) rather than surfacing it - memos server
+        // versions disagree on whether `created_ts` is a CEL timestamp or a
+        // bare int, and there's no cheap way to ask which one we're talking to.
+        const hasMoreCandidates = filterCandidateIndex < filterCandidates.length - 1;
+        if (hasMoreCandidates && filter && error instanceof Error && /HTTP 400/.test(error.message)) {
+          filterCandidateIndex += 1;
+          filter = filterCandidates[filterCandidateIndex];
           continue;
         }
         throw error;
