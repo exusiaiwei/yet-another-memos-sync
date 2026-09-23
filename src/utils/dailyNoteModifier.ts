@@ -27,7 +27,14 @@ export class DailyNoteModifier {
     const level = header.trim().match(/^(#{1,6})\s/)?.[1].length ?? 1;
     const matches = headings.filter(h => h.level === level && h.title === headingTitle(header));
     if (matches.length !== 1) {
-      console.warn(`Expected one header "${header}" for ${today}.`);
+      // Every existing daily note in the sync window is checked now (so full-day
+      // deletions can be detected - see DailyNoteManager.processMemos), including
+      // ones that never had this header, e.g. notes predating the plugin's setup.
+      // Only warn when there's actual content that couldn't be placed; a header
+      // that's simply absent with nothing to sync is not a problem.
+      if (Object.keys(fetchedRecordList).length > 0) {
+        console.warn(`Expected one header "${header}" for ${today}.`);
+      }
       return;
     }
     const section = matches[0];
